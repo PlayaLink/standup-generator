@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+---
+
+# Cursor Rules Maintenance
+
+When making changes that affect workflows, conventions, or processes documented in `.cursor/rules/`, update the corresponding rule file to reflect the new reality.
+
+- **`.cursor/rules/`** - Conventions that apply when editing specific file types (via globs) or always (via alwaysApply)
+- **`.claude/commands/`** - Workflows invoked explicitly via slash commands
