@@ -1,0 +1,31 @@
+---
+alwaysApply: true
+---
+
+# Standup Generator
+
+AI-powered standup report generator for Slack and Teams, pulling data from Jira.
+
+## Structure
+
+```
+apps/slack/     # Slack bot (Next.js + Bolt)
+apps/teams/     # Teams bot (Next.js + Bot Framework)
+packages/core/  # Shared library (@standup/core)
+```
+
+## Commands
+
+```bash
+npm run dev     # Start all apps (Slack:3001, Teams:3002)
+npm run build   # Build all packages
+npm run lint    # Lint all packages
+```
+
+## For More Context
+
+- `@architecture` - Full tech stack and patterns
+- `@monorepo` - Turborepo workspace details
+- `@database` - Supabase schema
+- `@jira` - Jira integration details
+- `@security` - Environment variables and encryption

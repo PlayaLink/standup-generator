@@ -1,0 +1,113 @@
+---
+description: Supabase database schema and query patterns
+---
+
+# Database (Supabase)
+
+## Client Initialization
+
+Lazy singleton in `packages/core/src/db/client.ts`:
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+let supabase: SupabaseClient | null = null;
+
+export function getSupabase() {
+  if (!supabase) {
+    supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_KEY!
+    );
+  }
+  return supabase;
+}
+```
+
+## Tables
+
+### users
+```sql
+id              UUID PRIMARY KEY
+slack_user_id   TEXT
+slack_team_id   TEXT
+teams_user_id   TEXT
+teams_tenant_id TEXT
+email           TEXT
+created_at      TIMESTAMPTZ
+updated_at      TIMESTAMPTZ
+```
+
+### oauth_tokens
+```sql
+id                      UUID PRIMARY KEY
+user_id                 UUID REFERENCES users(id)
+provider                TEXT ('jira')
+access_token_encrypted  TEXT
+refresh_token_encrypted TEXT
+expires_at              TIMESTAMPTZ
+scopes                  TEXT[]
+created_at              TIMESTAMPTZ
+updated_at              TIMESTAMPTZ
+```
+
+### jira_configs
+```sql
+id            UUID PRIMARY KEY
+user_id       UUID REFERENCES users(id)
+jira_cloud_id TEXT
+jira_base_url TEXT
+board_id      TEXT
+board_name    TEXT
+project_key   TEXT
+created_at    TIMESTAMPTZ
+updated_at    TIMESTAMPTZ
+```
+
+### ticket_names
+```sql
+id         UUID PRIMARY KEY
+user_id    UUID REFERENCES users(id)
+ticket_key TEXT
+name       TEXT
+created_at TIMESTAMPTZ
+```
+
+## Query Patterns
+
+### Upsert User
+```typescript
+const { data } = await supabase
+  .from('users')
+  .upsert({ slack_user_id, slack_team_id }, { onConflict: 'slack_user_id' })
+  .select()
+  .single();
+```
+
+### Get with Foreign Key
+```typescript
+const { data } = await supabase
+  .from('jira_configs')
+  .select('*')
+  .eq('user_id', userId)
+  .single();
+```
+
+### Store Encrypted Tokens
+```typescript
+await supabase
+  .from('oauth_tokens')
+  .upsert({
+    user_id: userId,
+    provider: 'jira',
+    access_token_encrypted: encrypt(tokens.access_token),
+    refresh_token_encrypted: encrypt(tokens.refresh_token),
+    expires_at: new Date(Date.now() + tokens.expires_in * 1000)
+  });
+```
+
+## Environment Variables
+
+```
+SUPABASE_URL         # https://xxx.supabase.co
+SUPABASE_SERVICE_KEY # service_role key (not anon)
+```

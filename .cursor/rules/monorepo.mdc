@@ -1,0 +1,81 @@
+---
+description: Turborepo workspace structure and commands
+---
+
+# Monorepo Guide
+
+## Workspace Structure
+
+```
+standup-generator/
+├── apps/           # Application packages
+│   ├── slack/      # Slack bot app
+│   └── teams/      # Teams bot app
+├── packages/       # Shared libraries
+│   └── core/       # @standup/core
+├── package.json    # Root workspace config
+└── turbo.json      # Turborepo pipeline
+```
+
+## Root package.json
+
+```json
+{
+  "workspaces": ["packages/*", "apps/*"],
+  "packageManager": "npm@10.2.0"
+}
+```
+
+## Turborepo Pipeline
+
+Defined in `turbo.json`:
+- `build` - Depends on `^build` (deps first), outputs `dist/**`, `.next/**`
+- `dev` - Persistent, no caching
+- `lint` - Depends on `^build`
+
+## Commands
+
+```bash
+# Development
+npm run dev          # Start all apps with watch mode
+
+# Building
+npm run build        # Build all packages in dependency order
+
+# Linting
+npm run lint         # Lint all packages
+
+# Cleanup
+npm run clean        # Remove node_modules, dist, .next, .turbo
+```
+
+## Adding a New Package
+
+1. Create directory under `packages/` or `apps/`
+2. Add `package.json` with appropriate name (e.g., `@standup/new-pkg`)
+3. Add to consuming package's dependencies
+4. Run `npm install` from root
+
+## Cross-Package Dependencies
+
+Apps depend on core:
+```json
+// apps/slack/package.json
+{
+  "dependencies": {
+    "@standup/core": "*"
+  }
+}
+```
+
+Import with subpaths:
+```typescript
+import { getOrCreateSlackUser } from '@standup/core/db';
+import { fetchTickets } from '@standup/core/jira';
+```
+
+## Build Order
+
+Turborepo handles build order automatically:
+1. `packages/core` builds first (no deps)
+2. `apps/slack` and `apps/teams` build after core
