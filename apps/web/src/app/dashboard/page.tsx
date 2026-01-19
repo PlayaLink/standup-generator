@@ -661,15 +661,14 @@ Additional formatting:
                   <p className="text-sm mt-2">Generate a report to see it here.</p>
                 </div>
               ) : (
-                <div className="flex gap-6">
+                <div className="flex gap-12">
                   {/* Report List */}
-                  <div className="w-1/3 border-r border-gray-200 pr-6">
-                    <h3 className="text-sm font-medium text-gray-700 mb-4">Reports</h3>
-                    <div className="space-y-2">
+                  <div className="w-1/3 border-r border-gray-200 pr-8">
+                    <div className="space-y-8">
                       {pastReports.map((pastReport) => (
                         <div
                           key={pastReport.id}
-                          className={`p-3 rounded-[6px] cursor-pointer transition-colors ${
+                          className={`py-6 px-8 rounded-[8px] cursor-pointer transition-colors ${
                             selectedPastReport?.id === pastReport.id
                               ? 'bg-brand-50 border border-brand-200'
                               : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
@@ -715,19 +714,46 @@ Additional formatting:
                   <div className="flex-1">
                     {selectedPastReport ? (
                       <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-sm font-medium text-gray-700">Report Preview</h3>
+                        <div className="flex items-center justify-between mb-12">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {selectedPastReport.project_key}
+                              {selectedPastReport.board_name && (
+                                <span className="text-gray-500"> / {selectedPastReport.board_name}</span>
+                              )}
+                            </h3>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {new Date(selectedPastReport.created_at).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                month: 'long',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                              <span className="text-gray-400 ml-6">
+                                {new Date(selectedPastReport.created_at).toLocaleTimeString('en-US', {
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </p>
+                          </div>
                           <Button
                             variant="primary"
-                            size="sm"
+                            size="md"
                             onPress={() => {
                               setReport(selectedPastReport.report);
                               copyReport();
                             }}
+                            iconLeading={({ className }: { className?: string }) => (
+                              <Icon 
+                                name={copied ? 'check' : 'copy'} 
+                                className={className}
+                                aria-label={copied ? 'Copied' : 'Copy'}
+                              />
+                            )}
                             data-referenceid="copy-past-report"
-                          >
-                            Copy
-                          </Button>
+                            aria-label={copied ? 'Copied' : 'Copy report'}
+                          />
                         </div>
                         <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] report-content">
                           <ReactMarkdown>{selectedPastReport.report}</ReactMarkdown>
