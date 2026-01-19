@@ -19,12 +19,9 @@ export interface JiraComment {
 }
 
 export interface JiraBoard {
-  id: number;
+  id: string;
   name: string;
-  location: {
-    projectKey: string;
-    projectName: string;
-  };
+  key: string;
 }
 
 /**
@@ -51,24 +48,35 @@ async function getJiraApiUrl(userId: string): Promise<string> {
 }
 
 /**
- * Fetch all boards the user has access to
+ * Fetch all projects the user has access to
+ * Note: Uses /rest/api/3/project instead of /rest/agile/1.0/board
+ * because the Agile API requires granular scopes which can't be mixed with classic scopes
  */
 export async function fetchBoards(userId: string): Promise<JiraBoard[]> {
   const baseUrl = await getJiraApiUrl(userId);
   const headers = await getJiraHeaders(userId);
 
   const response = await fetch(
-    `${baseUrl}/rest/agile/1.0/board?type=scrum&type=kanban`,
+    `${baseUrl}/rest/api/3/project`,
     { headers }
   );
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Failed to fetch boards: ${error}`);
+    throw new Error(`Failed to fetch projects: ${error}`);
   }
 
-  const data = (await response.json()) as { values: JiraBoard[] };
-  return data.values;
+  const projects = (await response.json()) as Array<{
+    id: string;
+    key: string;
+    name: string;
+  }>;
+
+  return projects.map((project) => ({
+    id: project.id,
+    key: project.key,
+    name: project.name,
+  }));
 }
 
 /**
