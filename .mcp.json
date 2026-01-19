@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "url": "https://mcp.supabase.com/sse"
+    }
+  },
+  "standupGeneratorProject": {
+    "projectRef": "rrtijgttekxejmickkvj",
+    "supabase": {
+      "url": "https://rrtijgttekxejmickkvj.supabase.co",
+      "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJydGlqZ3R0ZWt4ZWptaWNra3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NTI4MzQsImV4cCI6MjA4NDAyODgzNH0._op38BJ8nrMR-zHon0vM7See9oOi9QkxGRsbLliSE0k"
+    }
+  }
+}
