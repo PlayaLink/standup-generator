@@ -4,7 +4,7 @@ alwaysApply: true
 
 # Commit Message Conventions
 
-**Important**: Only stage and commit files that were changed or added during the current Claude session. Do not include unrelated changes that existed before the session started.
+**Important**: Always ask for confirmation before commiting changes. Only stage and commit files that were changed or added during the current Claude session. Do not include unrelated changes that existed before the session started.
 
 ## Guidelines
 

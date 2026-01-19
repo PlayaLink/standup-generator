@@ -4,6 +4,8 @@ description: Supabase database schema and query patterns
 
 # Database (Supabase)
 
+This project uses **hosted Supabase** (not local Docker). The database is accessed via the Supabase cloud platform at `https://xxx.supabase.co`.
+
 ## Client Initialization
 
 Lazy singleton in `packages/core/src/db/client.ts`:
