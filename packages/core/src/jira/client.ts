@@ -165,14 +165,19 @@ export async function fetchTickets(options: FetchTicketsOptions): Promise<JiraTi
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
   const cutoffStr = cutoffDate.toISOString().split('T')[0];
 
-  // Phase 1: Get ticket metadata from project
-  const jql = encodeURIComponent(
-    `project = "${projectKey}" AND (assignee = currentUser() OR updatedDate >= "${cutoffStr}")`
-  );
+  // Phase 1: Get tickets assigned to current user with recent activity
+  const jql = `project = "${projectKey}" AND assignee = currentUser() AND updatedDate >= "${cutoffStr}"`;
 
   const response = await fetch(
-    `${baseUrl}/rest/api/3/search?jql=${jql}&fields=key,summary,status,assignee,duedate,updated`,
-    { headers }
+    `${baseUrl}/rest/api/3/search/jql`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        jql,
+        fields: ['key', 'summary', 'status', 'assignee', 'duedate', 'updated'],
+      }),
+    }
   );
 
   if (!response.ok) {

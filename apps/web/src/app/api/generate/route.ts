@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const ticketNames = await getTicketNames(userId);
 
     // Generate report using Claude
-    const report = await generateStandupReport(
+    const { report } = await generateStandupReport(
       tickets,
       jiraConfig.jira_base_url,
       ticketNames
