@@ -103,15 +103,17 @@ export function registerStandupHandler() {
 }
 
 /**
- * Format markdown report for Slack's mrkdwn format
+ * Format markdown report for Slack
+ * Slack auto-links URLs, so we just expose the URL directly
  */
 function formatReportForSlack(report: string): string {
-  // Slack uses slightly different markdown
-  // - Headers use *bold* instead of ##
-  // - Links are <url|text> format (already correct from Claude)
-
   return report
-    .replace(/^## (.+)$/gm, '*$1*') // Convert ## headers to bold
-    .replace(/^### (.+)$/gm, '*$1*') // Convert ### headers to bold
-    .replace(/^- /gm, '• '); // Use bullet points
+    // Convert markdown links [text](url) to just the URL (Slack auto-links)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$2')
+    // Convert ## headers to bold
+    .replace(/^## (.+)$/gm, '*$1*')
+    // Convert ### headers to bold
+    .replace(/^### (.+)$/gm, '*$1*')
+    // Use bullet points
+    .replace(/^- /gm, '• ');
 }

@@ -181,11 +181,48 @@ export default function Dashboard() {
     }
   };
 
-  const copyReport = () => {
+  /**
+   * Convert markdown to HTML for rich text clipboard
+   */
+  const formatReportAsHtml = (text: string): string => {
+    return text
+      // Convert markdown links [text](url) to HTML anchor tags
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+      // Convert ## headers to bold
+      .replace(/^## (.+)$/gm, '<strong>$1</strong>')
+      // Convert ### headers to bold
+      .replace(/^### (.+)$/gm, '<strong>$1</strong>')
+      // Convert bullet points
+      .replace(/^- (.+)$/gm, '• $1')
+      // Convert newlines to <br> for HTML
+      .replace(/\n/g, '<br>');
+  };
+
+  const copyReport = async () => {
     if (report) {
-      navigator.clipboard.writeText(report);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      const html = formatReportAsHtml(report);
+      const plainText = report
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Strip URLs, keep text
+        .replace(/^## /gm, '')
+        .replace(/^### /gm, '')
+        .replace(/^- /gm, '• ');
+
+      try {
+        // Copy as rich text (HTML) so hyperlinks are preserved
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([plainText], { type: 'text/plain' }),
+          }),
+        ]);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // Fallback to plain text if rich text copy fails
+        navigator.clipboard.writeText(plainText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     }
   };
 
@@ -298,8 +335,13 @@ export default function Dashboard() {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-gray-900">Your Standup Report</h2>
-              <Button variant="outline" size="sm" onPress={copyReport}>
-                {copied ? 'Copied!' : 'Copy to Clipboard'}
+              <Button
+                variant="primary"
+                size="sm"
+                onPress={copyReport}
+                data-referenceid="copy-report"
+              >
+                {copied ? 'Copied!' : 'Copy'}
               </Button>
             </div>
             <div className="app-report">

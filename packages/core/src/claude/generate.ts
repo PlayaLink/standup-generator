@@ -101,6 +101,26 @@ function extractTicketNames(
 }
 
 /**
+ * Format markdown report for Slack
+ * Slack auto-links URLs, so we just expose the URL directly
+ * Converts:
+ * - Markdown links [text](url) → just the URL (Slack auto-links)
+ * - ## headers → *bold*
+ * - - bullets → • bullets
+ */
+export function formatReportForSlack(report: string): string {
+  return report
+    // Convert markdown links [text](url) to just the URL (Slack auto-links)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$2')
+    // Convert ## headers to bold
+    .replace(/^## (.+)$/gm, '*$1*')
+    // Convert ### headers to bold
+    .replace(/^### (.+)$/gm, '*$1*')
+    // Use bullet points
+    .replace(/^- /gm, '• ');
+}
+
+/**
  * Format a due date as relative text
  */
 export function formatRelativeDueDate(dueDate: string | null): string | null {

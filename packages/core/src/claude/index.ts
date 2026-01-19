@@ -1,1 +1,1 @@
-export { generateStandupReport, formatRelativeDueDate } from './generate';
+export { generateStandupReport, formatRelativeDueDate, formatReportForSlack } from './generate';
