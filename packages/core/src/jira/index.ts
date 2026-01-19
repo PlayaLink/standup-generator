@@ -11,12 +11,14 @@ export {
   fetchCloudId,
 } from './auth';
 export {
+  type JiraUserProfile,
   type JiraTicket,
   type JiraComment,
   type JiraProject,
   type JiraAgileBoard,
   type JiraBoard, // deprecated, use JiraProject
   type FetchTicketsOptions,
+  fetchCurrentUser,
   fetchProjects,
   fetchBoardsForProject,
   fetchBoards, // deprecated, use fetchProjects

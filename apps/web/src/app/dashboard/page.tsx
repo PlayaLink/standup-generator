@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
-import { Button, Field, Status, DotStatus } from '@oxymormon/chg-unified-ds';
+import { Avatar, Button, Field, Status } from '@oxymormon/chg-unified-ds';
 import { Select, type Key } from '@/components/Select';
 
 interface Project {
@@ -27,6 +27,8 @@ const daysOptions = [
 export default function Dashboard() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Key | null>('MC');
   const [boards, setBoards] = useState<Board[]>([]);
@@ -39,6 +41,7 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [jiraConnected, setJiraConnected] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -53,9 +56,28 @@ export default function Dashboard() {
     setUserEmail(email);
     setUserId(id);
 
-    // Fetch projects
+    // Fetch projects and user profile
     fetchProjects(id);
+    fetchUserProfile(id);
   }, [router]);
+
+  const fetchUserProfile = async (id: string) => {
+    try {
+      const response = await fetch(`/api/user-profile?userId=${id}`);
+      const data = await response.json();
+      if (response.ok && data.profile) {
+        if (data.profile.avatarUrl) {
+          setUserAvatar(data.profile.avatarUrl);
+        }
+        if (data.profile.displayName) {
+          setUserName(data.profile.displayName);
+        }
+      }
+    } catch (err) {
+      // Silently fail - profile is not critical
+      console.error('Failed to fetch user profile:', err);
+    }
+  };
 
   // Fetch boards when project is selected
   useEffect(() => {
@@ -254,25 +276,85 @@ export default function Dashboard() {
     <div className="app-container">
       <div className="app-card">
         <div className="app-header">
-          <h1>Standup Generator</h1>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <DotStatus appearance={jiraConnected ? 'green' : 'red'} />
-              <span className="text-sm text-gray-600">
-                {jiraConnected ? 'Jira Connected' : 'Jira Disconnected'}
-              </span>
-              {jiraConnected && (
-                <Button variant="outline" size="sm" onPress={handleDisconnectJira}>
-                  Reconnect Jira
-                </Button>
+          <div>
+            <h1>Standup Generator</h1>
+            <p className="text-sm text-gray-500" data-referenceid="app-subtitle">
+              Generate standup reports from recent activity on your Jira tickets.
+            </p>
+          </div>
+          <div className="relative">
+            <Button
+              variant="ghost"
+              onPress={() => setUserMenuOpen(!userMenuOpen)}
+              iconLeading={
+                <Avatar
+                  src={userAvatar || undefined}
+                  name={userName || userEmail || ''}
+                  size="sm"
+                  data-referenceid="user-avatar"
+                />
+              }
+              iconTrailing={({ className }: { className?: string }) => (
+                <svg 
+                  className={`${className} transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
+                  viewBox="0 0 20 20" 
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                    clipRule="evenodd"
+                  />
+                </svg>
               )}
-            </div>
-            <Button variant="outline" size="sm" onPress={handleLogout}>
-              Logout
+              data-referenceid="user-menu-button"
+            >
+              {userName || userEmail}
             </Button>
+            
+            {userMenuOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setUserMenuOpen(false)}
+                  data-referenceid="user-menu-backdrop"
+                />
+                <div 
+                  className="absolute right-0 top-full mt-2 w-[250px] rounded-4 border border-gray-300 bg-base-white py-8 shadow-lg z-20"
+                  data-referenceid="user-menu-dropdown"
+                >
+                  <div className="px-16 py-8 border-b border-gray-200">
+                    <p className="text-sm text-gray-500">Signed in as</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{userEmail}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    onPress={handleLogout}
+                    className="w-full justify-start"
+                    iconLeading={({ className }: { className?: string }) => (
+                      <svg 
+                        className={className}
+                        viewBox="0 0 24 24" 
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
+                    )}
+                    data-referenceid="logout-button"
+                  >
+                    Logout
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
-        <p className="user-email">Logged in as: {userEmail}</p>
       </div>
 
       <div className="app-card">

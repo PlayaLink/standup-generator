@@ -1,6 +1,13 @@
 import { getJiraAccessToken } from './auth';
 import { getJiraConfig } from '../db/configs';
 
+export interface JiraUserProfile {
+  accountId: string;
+  displayName: string;
+  emailAddress: string;
+  avatarUrl: string;
+}
+
 export interface JiraTicket {
   key: string;
   summary: string;
@@ -54,6 +61,40 @@ async function getJiraApiUrl(userId: string): Promise<string> {
     throw new Error('Jira not configured for user');
   }
   return `https://api.atlassian.com/ex/jira/${config.jira_cloud_id}`;
+}
+
+/**
+ * Fetch the current user's profile from Jira
+ */
+export async function fetchCurrentUser(userId: string): Promise<JiraUserProfile> {
+  const baseUrl = await getJiraApiUrl(userId);
+  const headers = await getJiraHeaders(userId);
+
+  const response = await fetch(`${baseUrl}/rest/api/3/myself`, { headers });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to fetch current user: ${error}`);
+  }
+
+  const user = (await response.json()) as {
+    accountId: string;
+    displayName: string;
+    emailAddress: string;
+    avatarUrls: {
+      '48x48': string;
+      '32x32': string;
+      '24x24': string;
+      '16x16': string;
+    };
+  };
+
+  return {
+    accountId: user.accountId,
+    displayName: user.displayName,
+    emailAddress: user.emailAddress,
+    avatarUrl: user.avatarUrls['48x48'],
+  };
 }
 
 /**
