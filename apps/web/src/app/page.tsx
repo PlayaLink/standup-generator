@@ -11,8 +11,18 @@ export default function Home() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  // Check if already logged in
+  // Check if already logged in (skip if just logged out)
   useEffect(() => {
+    // Check URL params on client side
+    const urlParams = new URLSearchParams(window.location.search);
+    const justLoggedOut = urlParams.get('logout') === 'true';
+    
+    if (justLoggedOut) {
+      // Clear the logout param from URL
+      window.history.replaceState({}, '', '/');
+      return;
+    }
+    
     const userEmail = localStorage.getItem('userEmail');
     if (userEmail) {
       router.push('/dashboard');

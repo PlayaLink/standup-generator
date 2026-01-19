@@ -159,7 +159,7 @@ export default function Dashboard() {
   const handleLogout = () => {
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userId');
-    router.push('/');
+    window.location.href = '/?logout=true';
   };
 
   const handleDisconnectJira = async () => {

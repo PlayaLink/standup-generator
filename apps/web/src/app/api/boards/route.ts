@@ -37,6 +37,9 @@ export async function GET(request: NextRequest) {
       errorMessage.includes('scope does not match') ||
       errorMessage.includes('401 Unauthorized') ||
       errorMessage.includes('invalid_grant') ||
+      errorMessage.includes('invalid_client') ||
+      errorMessage.includes('Failed to refresh token') ||
+      errorMessage.includes('failed to retrieve client') ||
       errorMessage.includes('access_denied');
 
     if (isJiraAuthError) {
