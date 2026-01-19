@@ -270,7 +270,7 @@ export default function Dashboard() {
       </div>
 
       <div className="app-card">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Generate Report</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-12">Generate Report</h2>
 
         {loadingProjects ? (
           <div className="app-loading">
@@ -278,7 +278,7 @@ export default function Dashboard() {
             Loading projects...
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-12">
             <Field label="Jira Project">
               <Select
                 options={projectOptions}
@@ -318,7 +318,7 @@ export default function Dashboard() {
               variant="primary"
               onPress={generateReport}
               isDisabled={loading || !selectedProject}
-              className="w-full"
+              className="w-full mt-12"
             >
               {loading ? 'Generating...' : 'Generate Standup Report'}
             </Button>

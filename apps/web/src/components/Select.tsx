@@ -95,7 +95,9 @@ export function Select({
   isDisabled = false,
   className,
 }: SelectProps) {
-  const [inputValue, setInputValue] = useState('');
+  // Initialize inputValue from selectedKey if provided
+  const initialValue = selectedKey ? options.find((opt) => opt.id === selectedKey)?.name ?? '' : '';
+  const [inputValue, setInputValue] = useState(initialValue);
 
   const filteredOptions = useMemo(() => {
     if (!inputValue) return options;
