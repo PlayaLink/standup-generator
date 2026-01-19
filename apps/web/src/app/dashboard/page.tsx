@@ -256,9 +256,9 @@ export default function Dashboard() {
 
   if (!userEmail) {
     return (
-      <div className="app-container">
-        <div className="app-loading">
-          <div className="app-spinner"></div>
+      <div className="max-w-[800px] mx-auto px-[2rem] py-[2rem]">
+        <div className="flex items-center gap-[0.5rem] text-gray-600">
+          <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
           Loading...
         </div>
       </div>
@@ -273,11 +273,11 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="app-container">
-      <div className="app-card">
-        <div className="app-header">
+    <div className="max-w-[800px] mx-auto px-[2rem] py-[2rem]">
+      <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] px-[1.5rem] py-[1.5rem] mb-[1.5rem]">
+        <div className="flex justify-between items-center mb-[1rem]">
           <div>
-            <h1>Standup Generator</h1>
+            <h1 className="text-2xl font-semibold text-gray-900 m-0">Standup Generator</h1>
             <p className="text-sm text-gray-500" data-referenceid="app-subtitle">
               Generate standup reports from recent activity on your Jira tickets.
             </p>
@@ -357,12 +357,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="app-card">
+      <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] px-[1.5rem] py-[1.5rem] mb-[1.5rem]">
         <h2 className="text-lg font-semibold text-gray-900 mb-12">Generate Report</h2>
 
         {loadingProjects ? (
-          <div className="app-loading">
-            <div className="app-spinner"></div>
+          <div className="flex items-center gap-[0.5rem] text-gray-600">
+            <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
             Loading projects...
           </div>
         ) : (
@@ -379,8 +379,8 @@ export default function Dashboard() {
             {selectedProject && (
               <Field label="Board (optional)">
                 {loadingBoards ? (
-                  <div className="flex items-center gap-2 py-2 text-sm text-gray-500">
-                    <div className="app-spinner w-4 h-4"></div>
+                  <div className="flex items-center gap-[0.5rem] py-2 text-sm text-gray-500">
+                    <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
                     Loading boards...
                   </div>
                 ) : (
@@ -432,7 +432,7 @@ export default function Dashboard() {
                 {copied ? 'Copied!' : 'Copy'}
               </Button>
             </div>
-            <div className="app-report">
+            <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] mt-[1rem] report-content">
               <ReactMarkdown>{report}</ReactMarkdown>
             </div>
           </div>

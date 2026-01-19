@@ -66,8 +66,8 @@ export default function Home() {
   };
 
   return (
-    <div className="app-container">
-      <div className="app-card" style={{ marginTop: '4rem', maxWidth: '400px', marginLeft: 'auto', marginRight: 'auto' }}>
+    <div className="max-w-[800px] mx-auto px-[2rem] py-[2rem]">
+      <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] px-[1.5rem] py-[1.5rem] mb-[1.5rem] mt-[4rem] max-w-[400px] mx-auto">
         <h1 className="text-2xl font-semibold text-center text-gray-900 mb-2">Standup Generator</h1>
         <p className="text-center text-gray-600 mb-8">
           Generate weekly standup reports from your Jira tickets
