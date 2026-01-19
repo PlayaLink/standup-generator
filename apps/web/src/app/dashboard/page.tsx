@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
-import { Avatar, Button, Field, Status } from '@oxymormon/chg-unified-ds';
+import { Avatar, Button, Field, Status, Icon } from '@oxymormon/chg-unified-ds';
 import { Select, type Key } from '@/components/Select';
 
 interface Project {
@@ -471,17 +471,10 @@ Additional formatting:
                 />
               }
               iconTrailing={({ className }: { className?: string }) => (
-                <svg 
+                <Icon 
+                  name="caret-down" 
                   className={`${className} transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
-                  viewBox="0 0 20 20" 
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                />
               )}
               data-referenceid="user-menu-button"
             >
@@ -604,7 +597,7 @@ Additional formatting:
                     variant="primary"
                     onPress={generateReport}
                     isDisabled={loading || !selectedProject}
-                    className="w-full mt-12"
+                    className="w-full my-12"
                   >
                     {loading ? 'Generating...' : 'Generate Standup Report'}
                   </Button>
@@ -618,17 +611,33 @@ Additional formatting:
               )}
 
               {report && (
-                <div className="mt-6">
+                <div className="mt-12">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-gray-900">Your Standup Report</h2>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onPress={copyReport}
-                      data-referenceid="copy-report"
-                    >
-                      {copied ? 'Copied!' : 'Copy'}
-                    </Button>
+                    <div className="flex items-center gap-8">
+                      <Button
+                        variant="ghost"
+                        size="md"
+                        onPress={() => setReport(null)}
+                        data-referenceid="clear-report"
+                      >
+                        Clear Results
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="md"
+                        onPress={copyReport}
+                        iconLeading={({ className }: { className?: string }) => (
+                          <Icon 
+                            name={copied ? 'check' : 'copy'} 
+                            className={className}
+                            aria-label={copied ? 'Copied' : 'Copy'}
+                          />
+                        )}
+                        data-referenceid="copy-report"
+                        aria-label={copied ? 'Copied' : 'Copy report'}
+                      />
+                    </div>
                   </div>
                   <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] mt-[1rem] report-content">
                     <ReactMarkdown>{report}</ReactMarkdown>
@@ -694,9 +703,7 @@ Additional formatting:
                               className="text-gray-400 hover:text-red-500 p-1"
                               data-referenceid="delete-report"
                             >
-                              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
+                              <Icon name="trash" className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
