@@ -113,6 +113,25 @@ export default function Dashboard() {
     router.push('/');
   };
 
+  const handleDisconnectJira = async () => {
+    if (!userId) return;
+
+    try {
+      const response = await fetch('/api/disconnect-jira', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (response.ok) {
+        // Refresh the page to trigger re-authentication
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Failed to disconnect Jira:', err);
+    }
+  };
+
   const copyReport = () => {
     if (report) {
       navigator.clipboard.writeText(report);
@@ -148,6 +167,11 @@ export default function Dashboard() {
               <span className="text-sm text-gray-600">
                 {jiraConnected ? 'Jira Connected' : 'Jira Disconnected'}
               </span>
+              {jiraConnected && (
+                <Button variant="outline" size="sm" onPress={handleDisconnectJira}>
+                  Reconnect Jira
+                </Button>
+              )}
             </div>
             <Button variant="outline" size="sm" onPress={handleLogout}>
               Logout
