@@ -44,7 +44,7 @@ export function registerStandupHandler() {
 
       // Check if user has selected a board
       const jiraConfig = await getJiraConfig(user.id);
-      if (!jiraConfig?.board_id) {
+      if (!jiraConfig?.board_id || !jiraConfig?.project_key) {
         await respond({
           response_type: 'ephemeral',
           replace_original: true,
@@ -54,7 +54,10 @@ export function registerStandupHandler() {
       }
 
       // Fetch tickets from Jira
-      const tickets = await fetchTickets(user.id);
+      const tickets = await fetchTickets({
+        userId: user.id,
+        projectKey: jiraConfig.project_key,
+      });
 
       if (tickets.length === 0) {
         await respond({

@@ -46,7 +46,7 @@ export async function handleStandupCommand(
 
     // Check if user has selected a board
     const jiraConfig = await getJiraConfig(user.id);
-    if (!jiraConfig?.board_id) {
+    if (!jiraConfig?.board_id || !jiraConfig?.project_key) {
       await context.sendActivity(
         MessageFactory.attachment(
           CardFactory.adaptiveCard(createNoBoardSelectedCard())
@@ -56,7 +56,10 @@ export async function handleStandupCommand(
     }
 
     // Fetch tickets from Jira
-    const tickets = await fetchTickets(user.id);
+    const tickets = await fetchTickets({
+      userId: user.id,
+      projectKey: jiraConfig.project_key,
+    });
 
     if (tickets.length === 0) {
       await context.sendActivity(

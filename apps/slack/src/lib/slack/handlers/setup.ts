@@ -225,9 +225,9 @@ async function showBoardSelectionModal(
                 options: boards.map((board) => ({
                   text: {
                     type: 'plain_text',
-                    text: `${board.name} (${board.location.projectKey})`,
+                    text: `${board.name} (${board.key})`,
                   },
-                  value: `${board.id}:${board.location.projectKey}`,
+                  value: `${board.id}:${board.key}`,
                 })),
               },
             ],

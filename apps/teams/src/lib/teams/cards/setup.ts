@@ -66,8 +66,8 @@ export function createBoardSelectionCard(boards: JiraBoard[]) {
         isRequired: true,
         placeholder: 'Select a board',
         choices: boards.map((board) => ({
-          title: `${board.name} (${board.location.projectKey})`,
-          value: `${board.id}:${board.location.projectKey}:${board.name}`,
+          title: `${board.name} (${board.key})`,
+          value: `${board.id}:${board.key}:${board.name}`,
         })),
       },
     ],
