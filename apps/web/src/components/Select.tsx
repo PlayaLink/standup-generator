@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   ComboBox,
   Input,
-  Button,
   Popover,
   ListBox,
   ListBoxItem,
@@ -41,8 +40,8 @@ const styles = {
       'outline-none',
       'disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400',
     ].join(' '),
-    button: 'pointer-events-none absolute right-12 flex items-center',
-    icon: 'size-20 shrink-0 text-gray-500',
+    button: 'absolute right-[12px] flex items-center cursor-pointer',
+    icon: 'w-[20px] h-[20px] shrink-0 text-gray-500',
   },
   sizes: {
     default: {
@@ -61,7 +60,7 @@ const styles = {
     },
   },
   popover: 'rounded-4 border border-gray-300 bg-base-white py-8 shadow-lg',
-  listBox: 'max-h-200 overflow-y-auto outline-none',
+  listBox: 'max-h-[200px] overflow-y-auto outline-none',
   listItem: [
     'flex cursor-pointer items-center px-16 py-8 text-sm text-gray-900 transition-colors',
     'hover:bg-blue-50',
@@ -98,18 +97,46 @@ export function Select({
   // Initialize inputValue from selectedKey if provided
   const initialValue = selectedKey ? options.find((opt) => opt.id === selectedKey)?.name ?? '' : '';
   const [inputValue, setInputValue] = useState(initialValue);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync inputValue when options load or selectedKey changes
+  useEffect(() => {
+    if (selectedKey) {
+      const item = options.find((opt) => opt.id === selectedKey);
+      if (item && inputValue !== item.name) {
+        setInputValue(item.name);
+      }
+    } else if (!selectedKey && inputValue) {
+      setInputValue('');
+    }
+  }, [options, selectedKey]);
 
   const filteredOptions = useMemo(() => {
     if (!inputValue) return options;
+    // If inputValue matches a selected option exactly, show all options
+    const selectedItem = options.find((opt) => opt.id === selectedKey);
+    if (selectedItem && inputValue === selectedItem.name) {
+      return options;
+    }
+    // Otherwise filter based on typed input
     const lower = inputValue.toLowerCase();
     return options.filter((opt) => opt.name.toLowerCase().includes(lower));
-  }, [options, inputValue]);
+  }, [options, inputValue, selectedKey]);
 
   const inputClassName = [
     styles.common.input,
     styles.sizes[size].input,
     styles.states[state].input,
   ].join(' ');
+
+  const handleWrapperClick = () => {
+    if (!isDisabled && inputRef.current) {
+      inputRef.current.focus();
+      // Move cursor to end of input
+      const length = inputRef.current.value.length;
+      inputRef.current.setSelectionRange(length, length);
+    }
+  };
 
   return (
     <ComboBox
@@ -126,14 +153,19 @@ export function Select({
       isDisabled={isDisabled}
       menuTrigger="focus"
     >
-      <div className={styles.common.wrapper}>
+      <div 
+        className={`${styles.common.wrapper} cursor-pointer`}
+        onClick={handleWrapperClick}
+        data-referenceid="select-wrapper"
+      >
         <Input
+          ref={inputRef}
           placeholder={placeholder}
-          className={inputClassName}
+          className={`${inputClassName} cursor-pointer`}
         />
-        <Button className={styles.common.button}>
+        <div className={styles.common.button} data-referenceid="select-caret">
           <CaretDownIcon className={styles.common.icon} />
-        </Button>
+        </div>
       </div>
       <Popover className={['w-[--trigger-width]', styles.popover].join(' ')}>
         <ListBox className={styles.listBox}>

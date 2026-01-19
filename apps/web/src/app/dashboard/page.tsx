@@ -28,7 +28,7 @@ export default function Dashboard() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Key | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Key | null>('MC');
   const [boards, setBoards] = useState<Board[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<Key | null>(null);
   const [daysBack, setDaysBack] = useState<Key>('7');
@@ -116,6 +116,12 @@ export default function Dashboard() {
       }
 
       setBoards(data.boards);
+      
+      // Default to "Cred UX Updates" board if available
+      const defaultBoard = data.boards.find((b: Board) => b.name === 'Cred UX Updates');
+      if (defaultBoard) {
+        setSelectedBoard(String(defaultBoard.id));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load boards');
     } finally {
