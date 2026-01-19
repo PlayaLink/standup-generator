@@ -1,0 +1,24 @@
+---
+description: Semantic markup and DOM reference requirements. Always include data-referenceid attributes for easy DOM inspection and code searchability.
+alwaysApply: true
+---
+
+# Semantic Markup Requirements
+
+## Core Principle
+**Always include semantic markup** on all interactive and key layout elements to help with readability and debugging, especially for DOM inspection and code reference.
+
+## Required Attributes
+
+### data-referenceid
+- **MUST be included** on all interactive and structural elements
+- **MUST be a static string value** - **NEVER use variables**
+- **MUST be short and hyphenated** (e.g., `"action-button"`, `"delete-image"`)
+- Purpose: Copyable identifier that can be copied from the DOM and then found in the code using global search in IDE
+
+### Requirements
+- ✅ **Use static strings**: `data-reference="prototype-detail-header"`
+- ❌ **Never use variables**: ~~`data-reference={buttonId}`~~
+- ✅ **Short and descriptive**: `data-reference="drag-handle"`
+- ✅ **Hyphenated format**: `data-reference="save-prototype-description"`
+- ❌ **Avoid dynamic values**: ~~`data-reference={`button-${id}`}`~~
