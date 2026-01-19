@@ -122,6 +122,7 @@ export function Select({
       }}
       allowsCustomValue={false}
       isDisabled={isDisabled}
+      menuTrigger="focus"
     >
       <div className={styles.common.wrapper}>
         <Input

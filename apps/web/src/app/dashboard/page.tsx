@@ -6,9 +6,16 @@ import ReactMarkdown from 'react-markdown';
 import { Button, Field, Status, DotStatus } from '@oxymormon/chg-unified-ds';
 import { Select, type Key } from '@/components/Select';
 
+interface Project {
+  id: string;
+  name: string;
+  key: string;
+}
+
 interface Board {
   id: number;
   name: string;
+  type: string;
 }
 
 const daysOptions = [
@@ -20,12 +27,15 @@ const daysOptions = [
 export default function Dashboard() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Key | null>(null);
   const [boards, setBoards] = useState<Board[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<Key | null>(null);
   const [daysBack, setDaysBack] = useState<Key>('7');
   const [report, setReport] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loadingBoards, setLoadingBoards] = useState(true);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+  const [loadingBoards, setLoadingBoards] = useState(false);
   const [error, setError] = useState('');
   const [jiraConnected, setJiraConnected] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -43,18 +53,62 @@ export default function Dashboard() {
     setUserEmail(email);
     setUserId(id);
 
-    // Fetch boards
-    fetchBoards(id);
+    // Fetch projects
+    fetchProjects(id);
   }, [router]);
 
-  const fetchBoards = async (id: string) => {
+  // Fetch boards when project is selected
+  useEffect(() => {
+    if (selectedProject && userId) {
+      const project = projects.find((p) => p.key === selectedProject);
+      if (project) {
+        fetchBoardsForProject(project.key);
+      }
+    } else {
+      setBoards([]);
+      setSelectedBoard(null);
+    }
+  }, [selectedProject, userId, projects]);
+
+  const fetchProjects = async (id: string) => {
+    setLoadingProjects(true);
+    setError('');
     try {
       const response = await fetch(`/api/boards?userId=${id}`);
       const data = await response.json();
 
       if (!response.ok) {
         if (data.needsAuth) {
-          // Redirect to Jira auth
+          window.location.href = data.jiraAuthUrl;
+          return;
+        }
+        throw new Error(data.error || 'Failed to fetch projects');
+      }
+
+      if (!data.boards || data.boards.length === 0) {
+        setError('No Jira projects found. Make sure you have access to at least one project.');
+      }
+
+      setProjects(data.boards || []);
+      setJiraConnected(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load projects');
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+
+  const fetchBoardsForProject = async (projectKey: string) => {
+    setLoadingBoards(true);
+    setSelectedBoard(null);
+    try {
+      const response = await fetch(
+        `/api/boards-for-project?userId=${userId}&projectKey=${projectKey}`
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.needsAuth) {
           window.location.href = data.jiraAuthUrl;
           return;
         }
@@ -62,12 +116,6 @@ export default function Dashboard() {
       }
 
       setBoards(data.boards);
-      setJiraConnected(true);
-
-      // Select first board by default
-      if (data.boards.length > 0) {
-        setSelectedBoard(data.boards[0].id);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load boards');
     } finally {
@@ -76,7 +124,7 @@ export default function Dashboard() {
   };
 
   const generateReport = async () => {
-    if (!userId) return;
+    if (!userId || !selectedProject) return;
 
     setLoading(true);
     setError('');
@@ -88,6 +136,7 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
+          projectKey: selectedProject,
           boardId: selectedBoard ? Number(selectedBoard) : undefined,
           daysBack: Number(daysBack),
         }),
@@ -151,6 +200,8 @@ export default function Dashboard() {
     );
   }
 
+  const projectOptions = projects.map((p) => ({ id: p.key, name: `${p.name} (${p.key})` }));
+
   const boardOptions = [
     { id: '', name: 'All boards' },
     ...boards.map((b) => ({ id: String(b.id), name: b.name })),
@@ -184,21 +235,39 @@ export default function Dashboard() {
       <div className="app-card">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Generate Report</h2>
 
-        {loadingBoards ? (
+        {loadingProjects ? (
           <div className="app-loading">
             <div className="app-spinner"></div>
-            Loading boards...
+            Loading projects...
           </div>
         ) : (
           <div className="space-y-4">
-            <Field label="Jira Board (optional)">
+            <Field label="Jira Project">
               <Select
-                options={boardOptions}
-                selectedKey={selectedBoard ?? ''}
-                onSelectionChange={(key) => setSelectedBoard(key === '' ? null : key)}
-                placeholder="All boards"
+                options={projectOptions}
+                selectedKey={selectedProject ?? ''}
+                onSelectionChange={(key) => setSelectedProject(key === '' ? null : key)}
+                placeholder="Select a project"
               />
             </Field>
+
+            {selectedProject && (
+              <Field label="Board (optional)">
+                {loadingBoards ? (
+                  <div className="flex items-center gap-2 py-2 text-sm text-gray-500">
+                    <div className="app-spinner w-4 h-4"></div>
+                    Loading boards...
+                  </div>
+                ) : (
+                  <Select
+                    options={boardOptions}
+                    selectedKey={selectedBoard ?? ''}
+                    onSelectionChange={(key) => setSelectedBoard(key === '' ? null : key)}
+                    placeholder="All boards"
+                  />
+                )}
+              </Field>
+            )}
 
             <Field label="Days to look back">
               <Select
@@ -211,7 +280,7 @@ export default function Dashboard() {
             <Button
               variant="primary"
               onPress={generateReport}
-              isDisabled={loading}
+              isDisabled={loading || !selectedProject}
               className="w-full"
             >
               {loading ? 'Generating...' : 'Generate Standup Report'}

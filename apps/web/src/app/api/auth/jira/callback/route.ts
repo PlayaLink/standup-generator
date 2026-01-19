@@ -12,10 +12,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const state = searchParams.get('state'); // This is the userId
 
-  console.log('[jira-callback] Received callback with code:', !!code, 'state:', state);
-
   if (!code || !state) {
-    console.log('[jira-callback] Missing params');
     return NextResponse.redirect(new URL('/?error=missing_params', request.url));
   }
 
@@ -24,25 +21,18 @@ export async function GET(request: NextRequest) {
 
     // Verify user exists
     const user = await getUserById(userId);
-    console.log('[jira-callback] User found:', !!user);
     if (!user) {
       return NextResponse.redirect(new URL('/?error=invalid_user', request.url));
     }
 
     // Exchange code for tokens
-    console.log('[jira-callback] Exchanging code for tokens...');
     const tokens = await exchangeCodeForTokens(code);
-    console.log('[jira-callback] Tokens received, scopes:', tokens.scope);
 
     // Store tokens
-    console.log('[jira-callback] Storing tokens...');
     await storeJiraTokens(userId, tokens);
-    console.log('[jira-callback] Tokens stored successfully');
 
     // Fetch and store cloud ID
-    console.log('[jira-callback] Fetching cloud ID...');
     const cloudId = await fetchCloudId(tokens.access_token);
-    console.log('[jira-callback] Cloud ID:', cloudId);
 
     // Get Jira base URL from accessible resources
     const resourcesResponse = await fetch(
@@ -67,10 +57,7 @@ export async function GET(request: NextRequest) {
     const dashboardUrl = new URL('/dashboard', request.url);
     dashboardUrl.searchParams.set('jira_connected', 'true');
 
-    // Create response with redirect
-    const response = NextResponse.redirect(dashboardUrl);
-
-    return response;
+    return NextResponse.redirect(dashboardUrl);
   } catch (error) {
     console.error('Jira OAuth callback error:', error);
     return NextResponse.redirect(

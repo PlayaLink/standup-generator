@@ -13,7 +13,12 @@ export {
 export {
   type JiraTicket,
   type JiraComment,
-  type JiraBoard,
-  fetchBoards,
+  type JiraProject,
+  type JiraAgileBoard,
+  type JiraBoard, // deprecated, use JiraProject
+  type FetchTicketsOptions,
+  fetchProjects,
+  fetchBoardsForProject,
+  fetchBoards, // deprecated, use fetchProjects
   fetchTickets,
 } from './client';

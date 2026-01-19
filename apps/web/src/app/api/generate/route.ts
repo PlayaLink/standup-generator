@@ -8,10 +8,14 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, daysBack = 7 } = await request.json();
+    const { userId, projectKey, boardId, daysBack = 7 } = await request.json();
 
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    }
+
+    if (!projectKey) {
+      return NextResponse.json({ error: 'projectKey is required' }, { status: 400 });
     }
 
     // Get Jira config for base URL
@@ -24,7 +28,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch tickets from Jira
-    const tickets = await fetchTickets(userId, daysBack);
+    const tickets = await fetchTickets({
+      userId,
+      projectKey,
+      boardId,
+      daysBack,
+    });
 
     if (tickets.length === 0) {
       return NextResponse.json({

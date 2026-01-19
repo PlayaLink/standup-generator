@@ -3,7 +3,8 @@ import { getOrCreateWebUser, getJiraTokens, buildJiraAuthUrl } from '@standup/co
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json();
+    const body = await request.json();
+    const { email } = body;
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });

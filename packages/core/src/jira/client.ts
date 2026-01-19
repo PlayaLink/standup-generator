@@ -18,11 +18,20 @@ export interface JiraComment {
   created: string;
 }
 
-export interface JiraBoard {
+export interface JiraProject {
   id: string;
   name: string;
   key: string;
 }
+
+export interface JiraAgileBoard {
+  id: number;
+  name: string;
+  type: string;
+}
+
+/** @deprecated Use JiraProject instead */
+export type JiraBoard = JiraProject;
 
 /**
  * Create authenticated headers for Jira API requests
@@ -49,17 +58,12 @@ async function getJiraApiUrl(userId: string): Promise<string> {
 
 /**
  * Fetch all projects the user has access to
- * Note: Uses /rest/api/3/project instead of /rest/agile/1.0/board
- * because the Agile API requires granular scopes which can't be mixed with classic scopes
  */
-export async function fetchBoards(userId: string): Promise<JiraBoard[]> {
+export async function fetchProjects(userId: string): Promise<JiraProject[]> {
   const baseUrl = await getJiraApiUrl(userId);
   const headers = await getJiraHeaders(userId);
 
-  const response = await fetch(
-    `${baseUrl}/rest/api/3/project`,
-    { headers }
-  );
+  const response = await fetch(`${baseUrl}/rest/api/3/project`, { headers });
 
   if (!response.ok) {
     const error = await response.text();
@@ -79,17 +83,80 @@ export async function fetchBoards(userId: string): Promise<JiraBoard[]> {
   }));
 }
 
+/** @deprecated Use fetchProjects instead */
+export const fetchBoards = fetchProjects;
+
 /**
- * Fetch tickets from a board with recent activity
+ * Get Basic Auth headers for Agile API (OAuth doesn't work with Agile API)
  */
-export async function fetchTickets(
-  userId: string,
-  daysBack: number = 7
-): Promise<JiraTicket[]> {
-  const config = await getJiraConfig(userId);
-  if (!config || !config.board_id) {
-    throw new Error('Jira board not configured for user');
+function getBasicAuthHeaders(): HeadersInit {
+  const email = process.env.ATLASSIAN_EMAIL;
+  const token = process.env.ATLASSIAN_API_TOKEN?.replace(/'/g, '');
+  
+  if (!email || !token) {
+    throw new Error('Missing ATLASSIAN_EMAIL or ATLASSIAN_API_TOKEN for Agile API');
   }
+  
+  const auth = Buffer.from(`${email}:${token}`).toString('base64');
+  return {
+    Authorization: `Basic ${auth}`,
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  };
+}
+
+/**
+ * Fetch all boards for a specific project using the Agile API
+ * Note: Uses Basic Auth because OAuth doesn't work with Jira's Agile API
+ */
+export async function fetchBoardsForProject(
+  userId: string,
+  projectKeyOrId: string
+): Promise<JiraAgileBoard[]> {
+  // Get the Jira base URL from config (need it for direct API calls)
+  const config = await getJiraConfig(userId);
+  if (!config?.jira_base_url) {
+    throw new Error('Jira not configured for user');
+  }
+
+  // Use Basic Auth - OAuth scope doesn't work with Agile API
+  const headers = getBasicAuthHeaders();
+  const url = `${config.jira_base_url}/rest/agile/1.0/board?projectKeyOrId=${encodeURIComponent(projectKeyOrId)}`;
+
+  const response = await fetch(url, { headers });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to fetch boards for project ${projectKeyOrId}: ${response.status} ${error}`);
+  }
+
+  const data = (await response.json()) as {
+    values: Array<{
+      id: number;
+      name: string;
+      type: string;
+    }>;
+  };
+
+  return data.values.map((board) => ({
+    id: board.id,
+    name: board.name,
+    type: board.type,
+  }));
+}
+
+export interface FetchTicketsOptions {
+  userId: string;
+  projectKey: string;
+  boardId?: number;
+  daysBack?: number;
+}
+
+/**
+ * Fetch tickets from a project with recent activity
+ */
+export async function fetchTickets(options: FetchTicketsOptions): Promise<JiraTicket[]> {
+  const { userId, projectKey, daysBack = 7 } = options;
 
   const baseUrl = await getJiraApiUrl(userId);
   const headers = await getJiraHeaders(userId);
@@ -98,9 +165,9 @@ export async function fetchTickets(
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
   const cutoffStr = cutoffDate.toISOString().split('T')[0];
 
-  // Phase 1: Get ticket metadata from board
+  // Phase 1: Get ticket metadata from project
   const jql = encodeURIComponent(
-    `project = "${config.project_key}" AND (assignee = currentUser() OR updatedDate >= "${cutoffStr}")`
+    `project = "${projectKey}" AND (assignee = currentUser() OR updatedDate >= "${cutoffStr}")`
   );
 
   const response = await fetch(

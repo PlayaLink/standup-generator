@@ -35,6 +35,10 @@ export function getSupabase(): SupabaseClient {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_KEY;
 
+  console.log('[getSupabase] URL:', url ? url.substring(0, 30) + '...' : 'MISSING');
+  console.log('[getSupabase] Key present:', !!key);
+  console.log('[getSupabase] NODE_TLS_REJECT_UNAUTHORIZED:', process.env.NODE_TLS_REJECT_UNAUTHORIZED);
+
   if (!url) {
     throw new Error('Missing SUPABASE_URL environment variable');
   }
