@@ -27,6 +27,8 @@ export function buildJiraAuthUrl(state: string): string {
   const params = new URLSearchParams({
     audience: 'api.atlassian.com',
     client_id: process.env.JIRA_CLIENT_ID!,
+    // Using classic scopes - granular scopes like read:board-scope:jira-software
+    // have known issues with the agile API returning "scope does not match"
     scope: 'read:jira-work read:jira-user offline_access',
     redirect_uri: process.env.JIRA_REDIRECT_URI!,
     state,
