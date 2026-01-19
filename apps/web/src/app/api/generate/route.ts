@@ -4,6 +4,9 @@ import {
   generateStandupReport,
   getJiraConfig,
   getTicketNames,
+  getUserFormatting,
+  saveReport,
+  fetchBoardsForProject,
 } from '@standup/core';
 
 export async function POST(request: NextRequest) {
@@ -44,12 +47,31 @@ export async function POST(request: NextRequest) {
     // Get custom ticket names for this user
     const ticketNames = await getTicketNames(userId);
 
-    // Generate report using Claude
+    // Get user's custom formatting (or default)
+    const customFormatting = await getUserFormatting(userId);
+
+    // Get board name if boardId is provided
+    let boardName: string | null = null;
+    if (boardId) {
+      try {
+        const boards = await fetchBoardsForProject(userId, projectKey);
+        const board = boards.find((b) => b.id === boardId);
+        boardName = board?.name || null;
+      } catch {
+        // If we can't fetch board name, continue without it
+      }
+    }
+
+    // Generate report using Claude with custom formatting
     const { report } = await generateStandupReport(
       tickets,
       jiraConfig.jira_base_url,
-      ticketNames
+      ticketNames,
+      customFormatting
     );
+
+    // Save report to database
+    await saveReport(userId, projectKey, boardName, report);
 
     return NextResponse.json({ report });
   } catch (error) {

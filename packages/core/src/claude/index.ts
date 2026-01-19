@@ -1,1 +1,6 @@
-export { generateStandupReport, formatRelativeDueDate, formatReportForSlack } from './generate';
+export {
+  generateStandupReport,
+  formatRelativeDueDate,
+  formatReportForSlack,
+  DEFAULT_SYSTEM_PROMPT,
+} from './generate';

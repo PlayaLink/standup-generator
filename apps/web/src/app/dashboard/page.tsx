@@ -20,9 +20,9 @@ interface Board {
 
 interface PastReport {
   id: string;
-  date: string;
-  projectKey: string;
-  boardName: string | null;
+  created_at: string;
+  project_key: string;
+  board_name: string | null;
   report: string;
 }
 
@@ -34,7 +34,29 @@ const daysOptions = [
 
 type TabId = 'new-report' | 'past-reports' | 'formatting';
 
-const FORMATTING_INSTRUCTIONS = `You are a helpful assistant that generates weekly standup reports from Jira ticket data.
+export default function Dashboard() {
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<Key | null>('MC');
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [selectedBoard, setSelectedBoard] = useState<Key | null>(null);
+  const [daysBack, setDaysBack] = useState<Key>('7');
+  const [report, setReport] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+  const [loadingBoards, setLoadingBoards] = useState(false);
+  const [error, setError] = useState('');
+  const [jiraConnected, setJiraConnected] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabId>('new-report');
+  const [pastReports, setPastReports] = useState<PastReport[]>([]);
+  const [selectedPastReport, setSelectedPastReport] = useState<PastReport | null>(null);
+  // Initialize with default formatting so textarea is never empty
+  const DEFAULT_FORMATTING_TEXT = `You are a helpful assistant that generates weekly standup reports from Jira ticket data.
 
 Format requirements:
 - Start directly with "## Last Week" (no title header)
@@ -59,27 +81,11 @@ Additional formatting:
 - Be concise - 1-3 bullet points per ticket
 - If a ticket has recent comments, incorporate relevant context`;
 
-export default function Dashboard() {
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userAvatar, setUserAvatar] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Key | null>('MC');
-  const [boards, setBoards] = useState<Board[]>([]);
-  const [selectedBoard, setSelectedBoard] = useState<Key | null>(null);
-  const [daysBack, setDaysBack] = useState<Key>('7');
-  const [report, setReport] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingProjects, setLoadingProjects] = useState(true);
-  const [loadingBoards, setLoadingBoards] = useState(false);
-  const [error, setError] = useState('');
-  const [jiraConnected, setJiraConnected] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>('new-report');
-  const [pastReports, setPastReports] = useState<PastReport[]>([]);
-  const [selectedPastReport, setSelectedPastReport] = useState<PastReport | null>(null);
+  const [formattingInstructions, setFormattingInstructions] = useState<string>(DEFAULT_FORMATTING_TEXT);
+  const [formattingEdited, setFormattingEdited] = useState(false);
+  const [savingFormatting, setSavingFormatting] = useState(false);
+  const [hasCustomFormatting, setHasCustomFormatting] = useState(false);
+  const [loadingPastReports, setLoadingPastReports] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -94,20 +100,105 @@ export default function Dashboard() {
     setUserEmail(email);
     setUserId(id);
 
-    // Load past reports from localStorage
-    const savedReports = localStorage.getItem('pastReports');
-    if (savedReports) {
-      try {
-        setPastReports(JSON.parse(savedReports));
-      } catch {
-        // Invalid JSON, ignore
-      }
-    }
-
     // Fetch projects and user profile
     fetchProjects(id);
     fetchUserProfile(id);
+    
+    // Load past reports and formatting from API
+    fetchPastReports(id);
+    fetchFormatting(id);
   }, [router]);
+
+  const fetchPastReports = async (id: string) => {
+    setLoadingPastReports(true);
+    try {
+      const response = await fetch(`/api/reports?userId=${id}`);
+      const data = await response.json();
+      if (response.ok && data.reports) {
+        setPastReports(data.reports);
+      }
+    } catch (err) {
+      console.error('Failed to fetch past reports:', err);
+    } finally {
+      setLoadingPastReports(false);
+    }
+  };
+
+  const fetchFormatting = async (id: string) => {
+    try {
+      const response = await fetch(`/api/user-formatting?userId=${id}`);
+      const data = await response.json();
+      if (response.ok && data.formatting) {
+        setFormattingInstructions(data.formatting);
+        setFormattingEdited(false);
+        setHasCustomFormatting(data.hasCustom || false);
+      }
+    } catch (err) {
+      console.error('Failed to fetch formatting:', err);
+      // Keep default formatting if fetch fails
+      setHasCustomFormatting(false);
+    }
+  };
+
+  const saveFormatting = async () => {
+    if (!userId) return;
+    
+    setSavingFormatting(true);
+    try {
+      const response = await fetch('/api/user-formatting', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          formatting: formattingInstructions,
+        }),
+      });
+
+      if (response.ok) {
+        setFormattingEdited(false);
+        setHasCustomFormatting(true);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to save formatting');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save formatting');
+    } finally {
+      setSavingFormatting(false);
+    }
+  };
+
+  const resetFormatting = async () => {
+    if (!userId) return;
+    
+    setSavingFormatting(true);
+    try {
+      // Delete custom formatting to revert to backend default
+      const response = await fetch(`/api/user-formatting?userId=${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Set to the default formatting returned from API (which comes from backend)
+        if (data.formatting) {
+          setFormattingInstructions(data.formatting);
+        } else {
+          // Fallback to local default if API doesn't return it
+          setFormattingInstructions(DEFAULT_FORMATTING_TEXT);
+        }
+        setFormattingEdited(false);
+        setHasCustomFormatting(false);
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to reset formatting');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reset formatting');
+    } finally {
+      setSavingFormatting(false);
+    }
+  };
 
   const fetchUserProfile = async (id: string) => {
     try {
@@ -226,22 +317,10 @@ export default function Dashboard() {
 
       setReport(data.report);
 
-      // Save to past reports
-      const boardName = selectedBoard 
-        ? boards.find(b => String(b.id) === selectedBoard)?.name || null
-        : null;
-      
-      const newReport: PastReport = {
-        id: Date.now().toString(),
-        date: new Date().toISOString(),
-        projectKey: String(selectedProject),
-        boardName,
-        report: data.report,
-      };
-
-      const updatedReports = [newReport, ...pastReports].slice(0, 20); // Keep last 20 reports
-      setPastReports(updatedReports);
-      localStorage.setItem('pastReports', JSON.stringify(updatedReports));
+      // Refresh past reports list (report is saved by API)
+      if (userId) {
+        fetchPastReports(userId);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -255,12 +334,28 @@ export default function Dashboard() {
     window.location.href = '/?logout=true';
   };
 
-  const deletePastReport = (reportId: string) => {
-    const updatedReports = pastReports.filter(r => r.id !== reportId);
-    setPastReports(updatedReports);
-    localStorage.setItem('pastReports', JSON.stringify(updatedReports));
-    if (selectedPastReport?.id === reportId) {
-      setSelectedPastReport(null);
+  const deletePastReport = async (reportId: string) => {
+    if (!userId) return;
+    
+    try {
+      const response = await fetch('/api/reports', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId, userId }),
+      });
+
+      if (response.ok) {
+        const updatedReports = pastReports.filter(r => r.id !== reportId);
+        setPastReports(updatedReports);
+        if (selectedPastReport?.id === reportId) {
+          setSelectedPastReport(null);
+        }
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to delete report');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete report');
     }
   };
 
@@ -546,7 +641,12 @@ export default function Dashboard() {
           {/* Past Reports Tab */}
           {activeTab === 'past-reports' && (
             <div data-referenceid="past-reports-tab">
-              {pastReports.length === 0 ? (
+              {loadingPastReports ? (
+                <div className="flex items-center justify-center py-12 gap-[0.5rem] text-gray-600">
+                  <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
+                  Loading reports...
+                </div>
+              ) : pastReports.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <p>No past reports yet.</p>
                   <p className="text-sm mt-2">Generate a report to see it here.</p>
@@ -571,13 +671,13 @@ export default function Dashboard() {
                           <div className="flex justify-between items-start">
                             <div>
                               <p className="text-sm font-medium text-gray-900">
-                                {pastReport.projectKey}
-                                {pastReport.boardName && (
-                                  <span className="text-gray-500"> / {pastReport.boardName}</span>
+                                {pastReport.project_key}
+                                {pastReport.board_name && (
+                                  <span className="text-gray-500"> / {pastReport.board_name}</span>
                                 )}
                               </p>
                               <p className="text-xs text-gray-500 mt-1">
-                                {new Date(pastReport.date).toLocaleDateString('en-US', {
+                                {new Date(pastReport.created_at).toLocaleDateString('en-US', {
                                   month: 'short',
                                   day: 'numeric',
                                   year: 'numeric',
@@ -643,13 +743,48 @@ export default function Dashboard() {
               <div className="mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Report Formatting Instructions</h3>
                 <p className="text-sm text-gray-500 mt-1">
-                  These are the instructions given to Claude when generating your standup report.
+                  Customize the instructions given to Claude when generating your standup report.
                 </p>
               </div>
-              <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem]">
-                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
-                  {FORMATTING_INSTRUCTIONS}
-                </pre>
+              <div className="space-y-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem]">
+                  <textarea
+                    value={formattingInstructions}
+                    onChange={(e) => {
+                      setFormattingInstructions(e.target.value);
+                      setFormattingEdited(true);
+                    }}
+                    className="w-full h-[400px] bg-transparent text-sm text-gray-700 font-mono whitespace-pre-wrap resize-none focus:outline-none"
+                    data-referenceid="formatting-textarea"
+                  />
+                </div>
+                <div className="flex gap-3 justify-end">
+                  {hasCustomFormatting && (
+                    <Button
+                      variant="outline"
+                      onPress={resetFormatting}
+                      isDisabled={savingFormatting}
+                      data-referenceid="reset-formatting"
+                    >
+                      Reset to Default
+                    </Button>
+                  )}
+                  {formattingEdited && (
+                    <Button
+                      variant="primary"
+                      onPress={saveFormatting}
+                      isDisabled={savingFormatting}
+                      data-referenceid="save-formatting"
+                    >
+                      {savingFormatting ? 'Saving...' : 'Save'}
+                    </Button>
+                  )}
+                </div>
+                {formattingEdited && (
+                  <div className="text-sm text-amber-600">
+                    You have unsaved changes. Click Save to apply them to future reports.
+                  </div>
+                )}
               </div>
             </div>
           )}

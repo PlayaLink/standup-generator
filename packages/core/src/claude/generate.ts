@@ -3,7 +3,10 @@ import { JiraTicket } from '../jira/client';
 
 const anthropic = new Anthropic();
 
-const SYSTEM_PROMPT = `You are a helpful assistant that generates weekly standup reports from Jira ticket data.
+/**
+ * Default system prompt for generating standup reports
+ */
+export const DEFAULT_SYSTEM_PROMPT = `You are a helpful assistant that generates weekly standup reports from Jira ticket data.
 
 Format requirements:
 - Start directly with "## Last Week" (no title header)
@@ -34,7 +37,8 @@ Additional formatting:
 export async function generateStandupReport(
   tickets: JiraTicket[],
   jiraBaseUrl: string,
-  ticketNames: Record<string, string> = {}
+  ticketNames: Record<string, string> = {},
+  customFormatting?: string
 ): Promise<{ report: string; newTicketNames: Record<string, string> }> {
   const today = new Date();
   const todayStr = today.toLocaleDateString('en-US', {
@@ -44,10 +48,12 @@ export async function generateStandupReport(
     day: 'numeric',
   });
 
+  const systemPrompt = customFormatting || DEFAULT_SYSTEM_PROMPT;
+
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 2000,
-    system: SYSTEM_PROMPT,
+    system: systemPrompt,
     messages: [
       {
         role: 'user',
