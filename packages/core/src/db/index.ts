@@ -4,9 +4,11 @@ export {
   type Platform,
   getOrCreateSlackUser,
   getOrCreateTeamsUser,
+  getOrCreateWebUser,
   getUserById,
   getUserBySlackId,
   getUserByTeamsId,
+  getUserByEmail,
 } from './users';
 export {
   type OAuthToken,

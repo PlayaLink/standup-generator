@@ -1,4 +1,4 @@
-import { getValidAccessToken, storeTokens } from '../db/tokens';
+import { getValidAccessToken, storeTokens, getTokens } from '../db/tokens';
 
 const JIRA_AUTH_URL = 'https://auth.atlassian.com/authorize';
 const JIRA_TOKEN_URL = 'https://auth.atlassian.com/oauth/token';
@@ -136,4 +136,22 @@ export async function storeJiraTokens(
     tokens.expires_in,
     scopes
   );
+}
+
+/**
+ * Get Jira tokens for a user (returns null if not found)
+ */
+export async function getJiraTokens(userId: string) {
+  return getTokens(userId, 'jira');
+}
+
+/**
+ * Fetch the cloud ID for a Jira instance using an access token
+ */
+export async function fetchCloudId(accessToken: string): Promise<string> {
+  const resources = await getAccessibleResources(accessToken);
+  if (resources.length === 0) {
+    throw new Error('No accessible Jira resources found');
+  }
+  return resources[0].id;
 }

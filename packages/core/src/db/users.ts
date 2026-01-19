@@ -133,3 +133,51 @@ export async function getUserByTeamsId(teamsUserId: string): Promise<User | null
 
   return data as User;
 }
+
+/**
+ * Get or create a user based on their email (for web app)
+ */
+export async function getOrCreateWebUser(email: string): Promise<User> {
+  // Try to find existing user by email
+  const { data: existingUser, error: fetchError } = await getSupabase()
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .single();
+
+  if (existingUser && !fetchError) {
+    return existingUser as User;
+  }
+
+  // Create new user
+  const { data: newUser, error: insertError } = await getSupabase()
+    .from('users')
+    .insert({
+      email,
+    })
+    .select()
+    .single();
+
+  if (insertError) {
+    throw new Error(`Failed to create user: ${insertError.message}`);
+  }
+
+  return newUser as User;
+}
+
+/**
+ * Get a user by their email
+ */
+export async function getUserByEmail(email: string): Promise<User | null> {
+  const { data, error } = await getSupabase()
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .single();
+
+  if (error) {
+    return null;
+  }
+
+  return data as User;
+}
