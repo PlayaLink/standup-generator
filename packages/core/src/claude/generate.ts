@@ -15,10 +15,12 @@ Format requirements:
 Tickets with activity in the past 7 days. Focus on what was accomplished.
 
 ## This Week
-"In Progress" and "To Do" tickets. Focus on planned actions.
+"In Progress" and "To Do" tickets. Focus on planned actions. Include due dates when applicable. Put the due date in parentheses after the ticket name.
 
 ## Blockers
 Dependencies or items you're waiting on. If none, just say "None"
+- If a blocker is related to a specific ticket, use the same format: [PROJ-123](url) - Blocker description
+- If a blocker is general (not ticket-specific), just describe it without a ticket link
 
 Additional formatting:
 - Keep ticket names to 3-5 words that capture the essence
