@@ -441,10 +441,10 @@ Additional formatting:
     ...boards.map((b) => ({ id: String(b.id), name: b.name })),
   ];
 
-  const tabs: { id: TabId; label: string }[] = [
-    { id: 'new-report', label: 'New Report' },
-    { id: 'past-reports', label: 'Past Reports' },
-    { id: 'formatting', label: 'Formatting' },
+  const tabs: { id: TabId; label: string; icon: 'plus' | 'clock-counter-clockwise' | 'sliders' }[] = [
+    { id: 'new-report', label: 'New Report', icon: 'plus' },
+    { id: 'past-reports', label: 'Past Reports', icon: 'clock-counter-clockwise' },
+    { id: 'formatting', label: 'Formatting', icon: 'sliders' },
   ];
 
   return (
@@ -453,7 +453,7 @@ Additional formatting:
       <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] px-[1.5rem] py-[1.5rem] mb-[1.5rem]">
         <div className="flex justify-between items-center mb-[1rem]">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 m-0">Standup Generator</h1>
+            <h1 className="text-2xl font-semibold text-gray-900 m-0">Jira Standup Generator</h1>
             <p className="text-sm text-gray-500" data-referenceid="app-subtitle">
               Generate standup reports from recent activity on your Jira tickets.
             </p>
@@ -534,13 +534,14 @@ Additional formatting:
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-[1.5rem] py-[1rem] text-sm font-medium border-b-2 transition-colors ${
+              className={`px-[1.5rem] py-[1rem] text-sm font-medium border-b-2 transition-colors flex items-center gap-8 ${
                 activeTab === tab.id
                   ? 'border-brand-600 text-brand-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
               data-referenceid={`tab-${tab.id}`}
             >
+              <Icon name={tab.icon} size={16} />
               {tab.label}
             </button>
           ))}
