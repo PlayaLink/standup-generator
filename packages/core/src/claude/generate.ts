@@ -15,10 +15,10 @@ Format requirements:
 - Organize into three sections:
 
 ## Last Week
-Tickets with activity in the past 7 days. Focus on what was accomplished.
+Include all tickets assigned to me with comments or status changes in the past 7 days. Focus on what was accomplished, even if it is just aligning on a plan or decision after a discussion.
 
 ## This Week
-"In Progress" and "To Do" tickets. Focus on planned actions. Include due dates when applicable. Put the due date in parentheses after the ticket name.
+"In Progress" and "To Do" tickets. Review the ticket descriptions and include 1-3 bullet points based on the next actions stated in the ticket, outstanding items from comment discussions, and logical next steps to move the ticket forward. Include due dates when applicable. Put the due date in parentheses after the ticket name.
 
 ## Blockers
 Dependencies or items you're waiting on. If none, just say "None"
