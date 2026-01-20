@@ -450,7 +450,7 @@ Additional formatting:
       label: 'New Report',
       icon: 'plus' as const,
       content: (
-        <div data-referenceid="new-report-tab" className="px-[1.5rem] pt-[1rem] pb-[1.5rem]">
+        <div data-referenceid="new-report-tab" className="px-[1rem] pt-[1rem] pb-[1.5rem]">
           {loadingProjects ? (
             <div className="flex items-center gap-[0.5rem] text-gray-600">
               <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
@@ -499,7 +499,7 @@ Additional formatting:
                 isDisabled={loading || !selectedProject}
                 className="w-full my-12"
               >
-                {loading ? 'Generating...' : 'Generate Standup Report'}
+                {loading ? 'Generating...' : 'Generate Standup'}
               </Button>
             </div>
           )}
@@ -547,7 +547,7 @@ Additional formatting:
       label: 'Past Reports',
       icon: 'clock-counter-clockwise' as const,
       content: (
-        <div data-referenceid="past-reports-tab" className="px-[1.5rem] pb-[1rem] pt-[1rem]">
+        <div data-referenceid="past-reports-tab" className="px-[1rem] pb-[1rem] pt-[1rem]">
           {loadingPastReports ? (
             <div className="flex items-center justify-center py-12 gap-[0.5rem] text-gray-600">
               <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
@@ -668,7 +668,7 @@ Additional formatting:
       label: 'Formatting',
       icon: 'sliders' as const,
       content: (
-        <div data-referenceid="formatting-tab" className="px-[1.5rem] pb-[1.5rem] pt-[1rem]">
+        <div data-referenceid="formatting-tab" className="px-[1rem] pb-[1.5rem] pt-[1rem]">
           <div className="mb-16">
             <h3 className="text-lg font-medium text-gray-900">Instructions for Claude Code</h3>
             <p className="text-sm text-gray-500 mt-1">
@@ -824,12 +824,12 @@ Additional formatting:
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] mb-[1.5rem]" data-referenceid="tab-navigation">
+      <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] my-[1.5rem]" data-referenceid="tab-navigation">
         <Tabs
           appearance="underline"
           items={tabItems}
           defaultSelectedKey="new-report"
-          className="rounded-[8px]"
+          className="rounded-[8px] pt-[1rem] px-[1rem]"
           onSelectionChange={(key) => {
             if (key === 'past-reports' && pastReports.length > 0 && !selectedPastReport) {
               setSelectedPastReport(pastReports[0]);
