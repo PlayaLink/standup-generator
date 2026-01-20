@@ -79,6 +79,7 @@ Additional formatting:
 - If a ticket has recent comments, incorporate relevant context`;
 
   const [formattingInstructions, setFormattingInstructions] = useState<string>(DEFAULT_FORMATTING_TEXT);
+  const [savedFormattingInstructions, setSavedFormattingInstructions] = useState<string>(DEFAULT_FORMATTING_TEXT);
   const [formattingEdited, setFormattingEdited] = useState(false);
   const [savingFormatting, setSavingFormatting] = useState(false);
   const [hasCustomFormatting, setHasCustomFormatting] = useState(false);
@@ -127,6 +128,7 @@ Additional formatting:
       const data = await response.json();
       if (response.ok && data.formatting) {
         setFormattingInstructions(data.formatting);
+        setSavedFormattingInstructions(data.formatting);
         setFormattingEdited(false);
         setHasCustomFormatting(data.hasCustom || false);
       }
@@ -152,6 +154,7 @@ Additional formatting:
       });
 
       if (response.ok) {
+        setSavedFormattingInstructions(formattingInstructions);
         setFormattingEdited(false);
         setHasCustomFormatting(true);
       } else {
@@ -163,6 +166,11 @@ Additional formatting:
     } finally {
       setSavingFormatting(false);
     }
+  };
+
+  const cancelFormatting = () => {
+    setFormattingInstructions(savedFormattingInstructions);
+    setFormattingEdited(false);
   };
 
   const resetFormatting = async () => {
@@ -178,12 +186,9 @@ Additional formatting:
       if (response.ok) {
         const data = await response.json();
         // Set to the default formatting returned from API (which comes from backend)
-        if (data.formatting) {
-          setFormattingInstructions(data.formatting);
-        } else {
-          // Fallback to local default if API doesn't return it
-          setFormattingInstructions(DEFAULT_FORMATTING_TEXT);
-        }
+        const defaultFormatting = data.formatting || DEFAULT_FORMATTING_TEXT;
+        setFormattingInstructions(defaultFormatting);
+        setSavedFormattingInstructions(defaultFormatting);
         setFormattingEdited(false);
         setHasCustomFormatting(false);
       } else {
@@ -445,7 +450,7 @@ Additional formatting:
       label: 'New Report',
       icon: 'plus' as const,
       content: (
-        <div data-referenceid="new-report-tab" className="px-[1.5rem] py-[1.5rem]">
+        <div data-referenceid="new-report-tab" className="px-[1.5rem] pt-[1rem] pb-[1.5rem]">
           {loadingProjects ? (
             <div className="flex items-center gap-[0.5rem] text-gray-600">
               <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
@@ -509,33 +514,28 @@ Additional formatting:
             <div className="mt-12">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-gray-900">Your Standup Report</h2>
-                <div className="flex items-center gap-8">
-                  <Button
-                    variant="ghost"
-                    size="md"
-                    onPress={() => setReport(null)}
-                    data-referenceid="clear-report"
-                  >
-                    Clear Results
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onPress={copyReport}
-                    iconLeading={({ className }: { className?: string }) => (
-                      <Icon 
-                        name={copied ? 'check' : 'copy'} 
-                        className={className}
-                        aria-label={copied ? 'Copied' : 'Copy'}
-                      />
-                    )}
-                    data-referenceid="copy-report"
-                    aria-label={copied ? 'Copied' : 'Copy report'}
-                  />
-                </div>
+                <Button
+                  variant="ghost"
+                  size="md"
+                  onPress={() => setReport(null)}
+                  data-referenceid="clear-report"
+                >
+                  Clear Results
+                </Button>
               </div>
-              <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] mt-[1rem] report-content">
-                <ReactMarkdown>{report}</ReactMarkdown>
+              <div style={{ position: 'relative' }} className="mt-[1rem]">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onPress={copyReport}
+                  style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}
+                  aria-label={copied ? 'Copied' : 'Copy report'}
+                  data-referenceid="copy-report"
+                  iconLeading={<Icon name={copied ? 'check' : 'copy'} className="size-sm" />}
+                />
+                <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] report-content">
+                  <ReactMarkdown>{report}</ReactMarkdown>
+                </div>
               </div>
             </div>
           )}
@@ -547,7 +547,7 @@ Additional formatting:
       label: 'Past Reports',
       icon: 'clock-counter-clockwise' as const,
       content: (
-        <div data-referenceid="past-reports-tab" className="px-[1.5rem] py-[1.5rem]">
+        <div data-referenceid="past-reports-tab" className="px-[1.5rem] pb-[1rem] pt-[1rem]">
           {loadingPastReports ? (
             <div className="flex items-center justify-center py-12 gap-[0.5rem] text-gray-600">
               <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
@@ -612,49 +612,44 @@ Additional formatting:
               <div className="flex-1">
                 {selectedPastReport ? (
                   <div>
-                    <div className="flex items-center justify-between mb-12">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {selectedPastReport.project_key}
-                          {selectedPastReport.board_name && (
-                            <span className="text-gray-500"> / {selectedPastReport.board_name}</span>
-                          )}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {new Date(selectedPastReport.created_at).toLocaleDateString('en-US', {
-                            weekday: 'long',
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric',
+                    <div className="mb-12">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {selectedPastReport.project_key}
+                        {selectedPastReport.board_name && (
+                          <span className="text-gray-500"> / {selectedPastReport.board_name}</span>
+                        )}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {new Date(selectedPastReport.created_at).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                        <span className="text-gray-400 ml-6">
+                          {new Date(selectedPastReport.created_at).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
                           })}
-                          <span className="text-gray-400 ml-6">
-                            {new Date(selectedPastReport.created_at).toLocaleTimeString('en-US', {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </p>
-                      </div>
+                        </span>
+                      </p>
+                    </div>
+                    <div style={{ position: 'relative' }}>
                       <Button
                         variant="primary"
-                        size="md"
+                        size="sm"
                         onPress={() => {
                           setReport(selectedPastReport.report);
                           copyReport();
                         }}
-                        iconLeading={({ className }: { className?: string }) => (
-                          <Icon 
-                            name={copied ? 'check' : 'copy'} 
-                            className={className}
-                            aria-label={copied ? 'Copied' : 'Copy'}
-                          />
-                        )}
-                        data-referenceid="copy-past-report"
+                        style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}
                         aria-label={copied ? 'Copied' : 'Copy report'}
+                        data-referenceid="copy-past-report"
+                        iconLeading={<Icon name={copied ? 'check' : 'copy'} className="size-sm" />}
                       />
-                    </div>
-                    <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] report-content">
-                      <ReactMarkdown>{selectedPastReport.report}</ReactMarkdown>
+                      <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] report-content">
+                        <ReactMarkdown>{selectedPastReport.report}</ReactMarkdown>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -673,12 +668,13 @@ Additional formatting:
       label: 'Formatting',
       icon: 'sliders' as const,
       content: (
-        <div data-referenceid="formatting-tab" className="px-[1.5rem] py-[1.5rem]">
-          <div className="mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Report Formatting Instructions</h3>
+        <div data-referenceid="formatting-tab" className="px-[1.5rem] pb-[1.5rem] pt-[1rem]">
+          <div className="mb-16">
+            <h3 className="text-lg font-medium text-gray-900">Instructions for Claude Code</h3>
             <p className="text-sm text-gray-500 mt-1">
-              Customize the instructions given to Claude when generating your standup report.
+              Below are the instructions sent to Claude when generating your standup report. You can edit them to customize the report.
             </p>
+            
           </div>
           <div className="space-y-4">
             <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem]">
@@ -692,33 +688,56 @@ Additional formatting:
                 data-referenceid="formatting-textarea"
               />
             </div>
-            <div className="flex gap-3 justify-end">
-              {hasCustomFormatting && (
+            <div className="flex items-center justify-between gap-3 mt-12">
+              {formattingEdited ? (
+                <div className="text-sm text-amber-600">
+                  You have unsaved changes.
+                </div>
+              ) : hasCustomFormatting ? (
                 <Button
-                  variant="outline"
+                  variant="ghost"
+                  size="sm"
                   onPress={resetFormatting}
                   isDisabled={savingFormatting}
                   data-referenceid="reset-formatting"
+                  iconLeading={({ className }: { className?: string }) => (
+                    <Icon 
+                      name="arrow-counter-clockwise" 
+                      className={className}
+                      aria-label="Reset"
+                    />
+                  )}
                 >
                   Reset to Default
                 </Button>
+              ) : (
+                <div />
               )}
-              {formattingEdited && (
-                <Button
-                  variant="primary"
-                  onPress={saveFormatting}
-                  isDisabled={savingFormatting}
-                  data-referenceid="save-formatting"
-                >
-                  {savingFormatting ? 'Saving...' : 'Save'}
-                </Button>
-              )}
-            </div>
-            {formattingEdited && (
-              <div className="text-sm text-amber-600">
-                You have unsaved changes. Click Save to apply them to future reports.
+              <div className="flex gap-8">
+                {formattingEdited && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onPress={cancelFormatting}
+                      isDisabled={savingFormatting}
+                      data-referenceid="cancel-formatting"
+                      className="w-[100px]"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onPress={saveFormatting}
+                      isDisabled={savingFormatting}
+                      data-referenceid="save-formatting"
+                      className="w-[100px]"
+                    >
+                      {savingFormatting ? 'Saving...' : 'Save'}
+                    </Button>
+                  </>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       ),
