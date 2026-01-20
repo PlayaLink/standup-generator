@@ -752,83 +752,80 @@ Additional formatting:
   ];
 
   return (
-    <div className="max-w-[800px] mx-auto px-[2rem] py-[2rem]">
-      {/* Header */}
-      <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] px-[1.5rem] py-[1.5rem] mb-[1.5rem]">
-        <div className="flex justify-between items-center mb-[1rem]">
+    <div className="min-h-screen">
+      {/* User Menu - Fixed Top Right */}
+      <div className="fixed top-6 right-6 z-50" data-referenceid="user-menu-container">
+        <div className="relative">
+          <Button
+            variant="ghost"
+            onPress={() => setUserMenuOpen(!userMenuOpen)}
+            data-referenceid="user-menu-button"
+            aria-label="User menu"
+            iconLeading={
+              <Avatar
+                src={userAvatar || undefined}
+                name={userName || userEmail || ''}
+                data-referenceid="user-avatar"
+              />
+            }
+          />
+          
+          {userMenuOpen && (
+            <>
+              <div 
+                className="fixed inset-0 z-10" 
+                onClick={() => setUserMenuOpen(false)}
+                data-referenceid="user-menu-backdrop"
+              />
+              <div 
+                className="absolute right-0 top-full mt-2 w-[300px] rounded-4 border border-gray-300 bg-base-white py-8 shadow-lg z-20"
+                data-referenceid="user-menu-dropdown"
+              >
+                <div className="px-16 py-8 border-b border-gray-200">
+                  <p className="text-sm text-gray-500">Signed in as</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{userEmail}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  onPress={handleLogout}
+                  className="w-full justify-start"
+                  iconLeading={<Icon name="sign-out" className="size-sm" />}
+                  data-referenceid="logout-button"
+                >
+                  Logout
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[800px] mx-auto px-[2rem] py-[2rem]">
+        {/* Header */}
+        <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] px-[1.5rem] py-[1.5rem] mb-[1.5rem]">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 m-0">Jira Standup Generator</h1>
             <p className="text-sm text-gray-500" data-referenceid="app-subtitle">
               Generate standup reports from recent activity on your Jira tickets.
             </p>
           </div>
-          <div className="relative">
-            <Button
-              variant="ghost"
-              onPress={() => setUserMenuOpen(!userMenuOpen)}
-              iconLeading={
-                <Avatar
-                  src={userAvatar || undefined}
-                  name={userName || userEmail || ''}
-                  size="sm"
-                  data-referenceid="user-avatar"
-                />
-              }
-              iconTrailing={({ className }: { className?: string }) => (
-                <Icon 
-                  name="caret-down" 
-                  className={`${className} transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
-                />
-              )}
-              data-referenceid="user-menu-button"
-            >
-              {userName || userEmail}
-            </Button>
-            
-            {userMenuOpen && (
-              <>
-                <div 
-                  className="fixed inset-0 z-10" 
-                  onClick={() => setUserMenuOpen(false)}
-                  data-referenceid="user-menu-backdrop"
-                />
-                <div 
-                  className="absolute right-0 top-full mt-2 w-[250px] rounded-4 border border-gray-300 bg-base-white py-8 shadow-lg z-20"
-                  data-referenceid="user-menu-dropdown"
-                >
-                  <div className="px-16 py-8 border-b border-gray-200">
-                    <p className="text-sm text-gray-500">Signed in as</p>
-                    <p className="text-sm font-medium text-gray-900 truncate">{userEmail}</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    onPress={handleLogout}
-                    className="w-full justify-start"
-                    iconLeading={<Icon name="sign-out" className="size-sm" />}
-                    data-referenceid="logout-button"
-                  >
-                    Logout
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] my-[1.5rem]" data-referenceid="tab-navigation">
-        <Tabs
-          appearance="underline"
-          items={tabItems}
-          defaultSelectedKey="new-report"
-          className="rounded-[8px] pt-12 px-12"
-          onSelectionChange={(key) => {
-            if (key === 'past-reports' && pastReports.length > 0 && !selectedPastReport) {
-              setSelectedPastReport(pastReports[0]);
-            }
-          }}
-        />
+        {/* Tabs */}
+        <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] my-[1.5rem]" data-referenceid="tab-navigation">
+          <Tabs
+            appearance="underline"
+            items={tabItems}
+            defaultSelectedKey="new-report"
+            className="rounded-[8px] pt-12 px-12"
+            onSelectionChange={(key) => {
+              if (key === 'past-reports' && pastReports.length > 0 && !selectedPastReport) {
+                setSelectedPastReport(pastReports[0]);
+              }
+            }}
+          />
+        </div>
       </div>
     </div>
   );
