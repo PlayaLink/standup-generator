@@ -830,6 +830,11 @@ Additional formatting:
           items={tabItems}
           defaultSelectedKey="new-report"
           className="rounded-[8px]"
+          onSelectionChange={(key) => {
+            if (key === 'past-reports' && pastReports.length > 0 && !selectedPastReport) {
+              setSelectedPastReport(pastReports[0]);
+            }
+          }}
         />
       </div>
     </div>
