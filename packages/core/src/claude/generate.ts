@@ -22,7 +22,7 @@ Tickets with activity in the past 7 days. Focus on what was accomplished.
 
 ## Blockers
 Dependencies or items you're waiting on. If none, just say "None"
-- If a blocker is related to a specific ticket, use the same format: [PROJ-123](url) - Blocker description
+- If a blocker is related to a specific ticket, use the same format: [PROJ-123](url) - Concise Name. 1 bullet point describing the blocker.
 - If a blocker is general (not ticket-specific), just describe it without a ticket link
 
 Additional formatting:
