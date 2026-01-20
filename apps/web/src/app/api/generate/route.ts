@@ -31,12 +31,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch tickets from Jira
+    console.log(`Fetching Jira tickets from last ${daysBack} days...`);
     const tickets = await fetchTickets({
       userId,
       projectKey,
       boardId,
       daysBack,
     });
+
+    // Log tickets grouped by status
+    const ticketsByStatus = tickets.reduce((acc, ticket) => {
+      const status = ticket.status || 'Unknown';
+      if (!acc[status]) {
+        acc[status] = [];
+      }
+      const commentCount = ticket.comments?.length || 0;
+      acc[status].push({
+        key: ticket.key,
+        summary: ticket.summary,
+        commentCount,
+      });
+      return acc;
+    }, {} as Record<string, { key: string; summary: string; commentCount: number }[]>);
+    
+    console.log('=== Jira Tickets Fetched ===');
+    console.log(`Total: ${tickets.length} tickets`);
+    Object.entries(ticketsByStatus).forEach(([status, ticketList]) => {
+      console.log(`\n${status}:`);
+      ticketList.forEach((t) => {
+        console.log(`  ${t.key} - ${t.summary} (${t.commentCount} comments)`);
+      });
+    });
+    console.log('\n============================');
 
     if (tickets.length === 0) {
       return NextResponse.json({
@@ -73,7 +99,7 @@ export async function POST(request: NextRequest) {
     // Save report to database
     await saveReport(userId, projectKey, boardName, report);
 
-    return NextResponse.json({ report });
+    return NextResponse.json({ report, ticketsByStatus, rawTickets: tickets });
   } catch (error) {
     console.error('Generate report error:', error);
     return NextResponse.json(

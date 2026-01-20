@@ -7,6 +7,33 @@ import LogRocket from 'logrocket';
 import { Avatar, Button, Field, Status, Icon, Tabs } from '@oxymormon/chg-unified-ds';
 import { Select, type Key } from '@/components/Select';
 
+// Note: This must be kept in sync with DEFAULT_SYSTEM_PROMPT in packages/core/src/claude/prompts.ts
+// We can't import it directly because the core package includes Anthropic SDK which can't run in browser
+const DEFAULT_SYSTEM_PROMPT = `You are a helpful assistant that generates weekly standup reports from Jira ticket data.
+
+Format requirements:
+- Start directly with "## Last Week" (no title header)
+- Ticket format: [PROJ-123](https://jira.example.com/browse/PROJ-123) - Concise Name
+- Each ticket gets 1-3 bullet points describing work done or planned
+- Organize into three sections:
+
+## Last Week
+Include all "In Progress" or "In Review" tickets that have with new comments or status changes made in the past 7 days. Summarize the conversation in the comments for each ticket.
+
+## This Week
+Include all "In Progress" and "To Do" tickets assigned to me (even if they were included in the Last Week section). Review the ticket descriptions and include 1-3 bullet points based on the next actions stated in the ticket, outstanding items from comment discussions, and logical next steps to move the ticket forward. Include due dates when applicable. Put the due date in parentheses after the ticket name.
+
+## Blockers
+Dependencies or items you're waiting on. If none, just say "None"
+- If a blocker is related to a specific ticket, use the same format: [PROJ-123](url) - Concise Name. 1 bullet point describing the blocker.
+- If a blocker is general (not ticket-specific), just describe it without a ticket link
+
+Additional formatting:
+- Keep ticket names to 3-5 words that capture the essence
+- Use relative due dates: "Due tomorrow", "Due Friday", "Due next Tuesday", "Due 02/01"
+- Be concise - 1-3 bullet points per ticket
+- If a ticket has recent comments, incorporate relevant context`;
+
 interface Project {
   id: string;
   name: string;
@@ -53,34 +80,9 @@ export default function Dashboard() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [pastReports, setPastReports] = useState<PastReport[]>([]);
   const [selectedPastReport, setSelectedPastReport] = useState<PastReport | null>(null);
-  // Initialize with default formatting so textarea is never empty
-  const DEFAULT_FORMATTING_TEXT = `You are a helpful assistant that generates weekly standup reports from Jira ticket data.
-
-Format requirements:
-- Start directly with "## Last Week" (no title header)
-- Ticket format: [PROJ-123](https://jira.example.com/browse/PROJ-123) - Concise Name
-- Each ticket gets 1-3 bullet points describing work done or planned
-- Organize into three sections:
-
-## Last Week
-Tickets with activity in the past 7 days. Focus on what was accomplished.
-
-## This Week
-"In Progress" and "To Do" tickets. Focus on planned actions. Include due dates when applicable. Put the due date in parentheses after the ticket name.
-
-## Blockers
-Dependencies or items you're waiting on. If none, just say "None"
-- If a blocker is related to a specific ticket, use the same format: [PROJ-123](url) - Blocker description
-- If a blocker is general (not ticket-specific), just describe it without a ticket link
-
-Additional formatting:
-- Keep ticket names to 3-5 words that capture the essence
-- Use relative due dates: "Due tomorrow", "Due Friday", "Due next Tuesday", "Due 02/01"
-- Be concise - 1-3 bullet points per ticket
-- If a ticket has recent comments, incorporate relevant context`;
-
-  const [formattingInstructions, setFormattingInstructions] = useState<string>(DEFAULT_FORMATTING_TEXT);
-  const [savedFormattingInstructions, setSavedFormattingInstructions] = useState<string>(DEFAULT_FORMATTING_TEXT);
+  
+  const [formattingInstructions, setFormattingInstructions] = useState<string>(DEFAULT_SYSTEM_PROMPT);
+  const [savedFormattingInstructions, setSavedFormattingInstructions] = useState<string>(DEFAULT_SYSTEM_PROMPT);
   const [formattingEdited, setFormattingEdited] = useState(false);
   const [savingFormatting, setSavingFormatting] = useState(false);
   const [hasCustomFormatting, setHasCustomFormatting] = useState(false);
@@ -187,7 +189,7 @@ Additional formatting:
       if (response.ok) {
         const data = await response.json();
         // Set to the default formatting returned from API (which comes from backend)
-        const defaultFormatting = data.formatting || DEFAULT_FORMATTING_TEXT;
+        const defaultFormatting = data.formatting || DEFAULT_SYSTEM_PROMPT;
         setFormattingInstructions(defaultFormatting);
         setSavedFormattingInstructions(defaultFormatting);
         setFormattingEdited(false);
@@ -307,6 +309,7 @@ Additional formatting:
     setReport(null);
 
     try {
+      console.log(`Fetching Jira tickets from last ${daysBack} days...`);
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -322,6 +325,32 @@ Additional formatting:
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate report');
+      }
+
+      // Log tickets grouped by status to browser console
+      if (data.ticketsByStatus) {
+        type TicketInfo = { key: string; summary: string; commentCount: number };
+        const ticketsByStatus = data.ticketsByStatus as Record<string, TicketInfo[]>;
+        const totalTickets = Object.values(ticketsByStatus).flat().length;
+        console.log('=== Jira Tickets Fetched ===');
+        console.log(`Total: ${totalTickets} tickets`);
+        Object.entries(ticketsByStatus).forEach(([status, ticketList]) => {
+          console.log(`\n${status}:`);
+          ticketList.forEach((t) => {
+            console.log(`  ${t.key} - ${t.summary} (${t.commentCount} comments)`);
+          });
+        });
+        console.log('\n============================');
+      }
+
+      // Log raw data for MC-26002
+      if (data.rawTickets) {
+        const mc26002 = data.rawTickets.find((t: { key: string }) => t.key === 'MC-26002');
+        if (mc26002) {
+          console.log('\n=== Raw Data for MC-26002 ===');
+          console.log(JSON.stringify(mc26002, null, 2));
+          console.log('=============================\n');
+        }
       }
 
       setReport(data.report);

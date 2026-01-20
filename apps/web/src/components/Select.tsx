@@ -28,6 +28,7 @@ interface SelectProps {
   state?: SelectState;
   isDisabled?: boolean;
   className?: string;
+  'aria-label'?: string;
 }
 
 // Styles matching chg-unified-ds patterns
@@ -82,6 +83,7 @@ export function Select({
   state = 'default',
   isDisabled = false,
   className,
+  'aria-label': ariaLabel,
 }: SelectProps) {
   // Initialize inputValue from selectedKey if provided
   const initialValue = selectedKey ? options.find((opt) => opt.id === selectedKey)?.name ?? '' : '';
@@ -141,6 +143,7 @@ export function Select({
       allowsCustomValue={false}
       isDisabled={isDisabled}
       menuTrigger="focus"
+      aria-label={ariaLabel || placeholder}
     >
       <div 
         className={`${styles.common.wrapper} cursor-pointer`}
