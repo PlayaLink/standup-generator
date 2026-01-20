@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'Standup Generator',
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body data-theme="comphealth">{children}</body>
+      <body data-theme="comphealth">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

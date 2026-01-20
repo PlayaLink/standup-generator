@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import LogRocket from 'logrocket';
 import { Avatar, Button, Field, Status, Icon, Tabs } from '@oxymormon/chg-unified-ds';
 import { Select, type Key } from '@/components/Select';
 
@@ -213,6 +214,12 @@ Additional formatting:
         if (data.profile.displayName) {
           setUserName(data.profile.displayName);
         }
+        // Identify user in LogRocket
+        const email = localStorage.getItem('userEmail');
+        const traits: Record<string, string> = {};
+        if (data.profile.displayName) traits.name = data.profile.displayName;
+        if (email) traits.email = email;
+        LogRocket.identify(id, traits);
       }
     } catch (err) {
       // Silently fail - profile is not critical
