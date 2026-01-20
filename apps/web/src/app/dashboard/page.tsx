@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
-import { Avatar, Button, Field, Status, Icon } from '@oxymormon/chg-unified-ds';
+import { Avatar, Button, Field, Status, Icon, Tabs } from '@oxymormon/chg-unified-ds';
 import { Select, type Key } from '@/components/Select';
 
 interface Project {
@@ -32,8 +32,6 @@ const daysOptions = [
   { id: '30', name: 'Last 30 days' },
 ];
 
-type TabId = 'new-report' | 'past-reports' | 'formatting';
-
 export default function Dashboard() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -52,7 +50,6 @@ export default function Dashboard() {
   const [jiraConnected, setJiraConnected] = useState(false);
   const [copied, setCopied] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>('new-report');
   const [pastReports, setPastReports] = useState<PastReport[]>([]);
   const [selectedPastReport, setSelectedPastReport] = useState<PastReport | null>(null);
   // Initialize with default formatting so textarea is never empty
@@ -441,10 +438,291 @@ Additional formatting:
     ...boards.map((b) => ({ id: String(b.id), name: b.name })),
   ];
 
-  const tabs: { id: TabId; label: string; icon: 'plus' | 'clock-counter-clockwise' | 'sliders' }[] = [
-    { id: 'new-report', label: 'New Report', icon: 'plus' },
-    { id: 'past-reports', label: 'Past Reports', icon: 'clock-counter-clockwise' },
-    { id: 'formatting', label: 'Formatting', icon: 'sliders' },
+  // Tab items for Tabs component
+  const tabItems = [
+    {
+      id: 'new-report',
+      label: 'New Report',
+      icon: 'plus' as const,
+      content: (
+        <div data-referenceid="new-report-tab" className="px-[1.5rem] py-[1.5rem]">
+          {loadingProjects ? (
+            <div className="flex items-center gap-[0.5rem] text-gray-600">
+              <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
+              Loading projects...
+            </div>
+          ) : (
+            <div className="space-y-12">
+              <Field label="Jira Project">
+                <Select
+                  options={projectOptions}
+                  selectedKey={selectedProject ?? ''}
+                  onSelectionChange={(key) => setSelectedProject(key === '' ? null : key)}
+                  placeholder="Select a project"
+                />
+              </Field>
+
+              {selectedProject && (
+                <Field label="Board (optional)">
+                  {loadingBoards ? (
+                    <div className="flex items-center gap-[0.5rem] py-2 text-sm text-gray-500">
+                      <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
+                      Loading boards...
+                    </div>
+                  ) : (
+                    <Select
+                      options={boardOptions}
+                      selectedKey={selectedBoard ?? ''}
+                      onSelectionChange={(key) => setSelectedBoard(key === '' ? null : key)}
+                      placeholder="All boards"
+                    />
+                  )}
+                </Field>
+              )}
+
+              <Field label="Days to look back">
+                <Select
+                  options={daysOptions}
+                  selectedKey={daysBack}
+                  onSelectionChange={(key) => setDaysBack(key ?? '7')}
+                />
+              </Field>
+
+              <Button
+                variant="primary"
+                onPress={generateReport}
+                isDisabled={loading || !selectedProject}
+                className="w-full my-12"
+              >
+                {loading ? 'Generating...' : 'Generate Standup Report'}
+              </Button>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-4">
+              <Status appearance="red">{error}</Status>
+            </div>
+          )}
+
+          {report && (
+            <div className="mt-12">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-gray-900">Your Standup Report</h2>
+                <div className="flex items-center gap-8">
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    onPress={() => setReport(null)}
+                    data-referenceid="clear-report"
+                  >
+                    Clear Results
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onPress={copyReport}
+                    iconLeading={({ className }: { className?: string }) => (
+                      <Icon 
+                        name={copied ? 'check' : 'copy'} 
+                        className={className}
+                        aria-label={copied ? 'Copied' : 'Copy'}
+                      />
+                    )}
+                    data-referenceid="copy-report"
+                    aria-label={copied ? 'Copied' : 'Copy report'}
+                  />
+                </div>
+              </div>
+              <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] mt-[1rem] report-content">
+                <ReactMarkdown>{report}</ReactMarkdown>
+              </div>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: 'past-reports',
+      label: 'Past Reports',
+      icon: 'clock-counter-clockwise' as const,
+      content: (
+        <div data-referenceid="past-reports-tab" className="px-[1.5rem] py-[1.5rem]">
+          {loadingPastReports ? (
+            <div className="flex items-center justify-center py-12 gap-[0.5rem] text-gray-600">
+              <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
+              Loading reports...
+            </div>
+          ) : pastReports.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <p>No past reports yet.</p>
+              <p className="text-sm mt-2">Generate a report to see it here.</p>
+            </div>
+          ) : (
+            <div className="flex gap-12">
+              {/* Report List */}
+              <div className="w-1/3 border-r border-gray-200 pr-8">
+                <div className="space-y-8">
+                  {pastReports.map((pastReport) => (
+                    <div
+                      key={pastReport.id}
+                      className={`py-6 px-8 rounded-[8px] cursor-pointer transition-colors ${
+                        selectedPastReport?.id === pastReport.id
+                          ? 'bg-brand-50 border border-brand-200'
+                          : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+                      }`}
+                      onClick={() => setSelectedPastReport(pastReport)}
+                      data-referenceid="past-report-item"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {pastReport.project_key}
+                            {pastReport.board_name && (
+                              <span className="text-gray-500"> / {pastReport.board_name}</span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(pastReport.created_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deletePastReport(pastReport.id);
+                          }}
+                          className="text-gray-400 hover:text-red-500 p-1"
+                          data-referenceid="delete-report"
+                        >
+                          <Icon name="trash" className="size-sm" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Report Preview */}
+              <div className="flex-1">
+                {selectedPastReport ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-12">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {selectedPastReport.project_key}
+                          {selectedPastReport.board_name && (
+                            <span className="text-gray-500"> / {selectedPastReport.board_name}</span>
+                          )}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {new Date(selectedPastReport.created_at).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            month: 'long',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                          <span className="text-gray-400 ml-6">
+                            {new Date(selectedPastReport.created_at).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </p>
+                      </div>
+                      <Button
+                        variant="primary"
+                        size="md"
+                        onPress={() => {
+                          setReport(selectedPastReport.report);
+                          copyReport();
+                        }}
+                        iconLeading={({ className }: { className?: string }) => (
+                          <Icon 
+                            name={copied ? 'check' : 'copy'} 
+                            className={className}
+                            aria-label={copied ? 'Copied' : 'Copy'}
+                          />
+                        )}
+                        data-referenceid="copy-past-report"
+                        aria-label={copied ? 'Copied' : 'Copy report'}
+                      />
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] report-content">
+                      <ReactMarkdown>{selectedPastReport.report}</ReactMarkdown>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <p>Select a report to preview</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: 'formatting',
+      label: 'Formatting',
+      icon: 'sliders' as const,
+      content: (
+        <div data-referenceid="formatting-tab" className="px-[1.5rem] py-[1.5rem]">
+          <div className="mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Report Formatting Instructions</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Customize the instructions given to Claude when generating your standup report.
+            </p>
+          </div>
+          <div className="space-y-4">
+            <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem]">
+              <textarea
+                value={formattingInstructions}
+                onChange={(e) => {
+                  setFormattingInstructions(e.target.value);
+                  setFormattingEdited(true);
+                }}
+                className="w-full h-[400px] bg-transparent text-sm text-gray-700 font-mono whitespace-pre-wrap resize-none focus:outline-none"
+                data-referenceid="formatting-textarea"
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              {hasCustomFormatting && (
+                <Button
+                  variant="outline"
+                  onPress={resetFormatting}
+                  isDisabled={savingFormatting}
+                  data-referenceid="reset-formatting"
+                >
+                  Reset to Default
+                </Button>
+              )}
+              {formattingEdited && (
+                <Button
+                  variant="primary"
+                  onPress={saveFormatting}
+                  isDisabled={savingFormatting}
+                  data-referenceid="save-formatting"
+                >
+                  {savingFormatting ? 'Saving...' : 'Save'}
+                </Button>
+              )}
+            </div>
+            {formattingEdited && (
+              <div className="text-sm text-amber-600">
+                You have unsaved changes. Click Save to apply them to future reports.
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -527,302 +805,13 @@ Additional formatting:
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] mb-[1.5rem]">
-        {/* Tab Navigation */}
-        <nav className="flex border-b border-gray-200" data-referenceid="tab-navigation">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-[1.5rem] py-[1rem] text-sm font-medium border-b-2 transition-colors flex items-center gap-8 ${
-                activeTab === tab.id
-                  ? 'border-brand-600 text-brand-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-              data-referenceid={`tab-${tab.id}`}
-            >
-              <Icon name={tab.icon} className="size-sm" />
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Tab Content */}
-        <div className="px-[1.5rem] py-[1.5rem]">
-          {/* New Report Tab */}
-          {activeTab === 'new-report' && (
-            <div data-referenceid="new-report-tab">
-              {loadingProjects ? (
-                <div className="flex items-center gap-[0.5rem] text-gray-600">
-                  <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
-                  Loading projects...
-                </div>
-              ) : (
-                <div className="space-y-12">
-                  <Field label="Jira Project">
-                    <Select
-                      options={projectOptions}
-                      selectedKey={selectedProject ?? ''}
-                      onSelectionChange={(key) => setSelectedProject(key === '' ? null : key)}
-                      placeholder="Select a project"
-                    />
-                  </Field>
-
-                  {selectedProject && (
-                    <Field label="Board (optional)">
-                      {loadingBoards ? (
-                        <div className="flex items-center gap-[0.5rem] py-2 text-sm text-gray-500">
-                          <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
-                          Loading boards...
-                        </div>
-                      ) : (
-                        <Select
-                          options={boardOptions}
-                          selectedKey={selectedBoard ?? ''}
-                          onSelectionChange={(key) => setSelectedBoard(key === '' ? null : key)}
-                          placeholder="All boards"
-                        />
-                      )}
-                    </Field>
-                  )}
-
-                  <Field label="Days to look back">
-                    <Select
-                      options={daysOptions}
-                      selectedKey={daysBack}
-                      onSelectionChange={(key) => setDaysBack(key ?? '7')}
-                    />
-                  </Field>
-
-                  <Button
-                    variant="primary"
-                    onPress={generateReport}
-                    isDisabled={loading || !selectedProject}
-                    className="w-full my-12"
-                  >
-                    {loading ? 'Generating...' : 'Generate Standup Report'}
-                  </Button>
-                </div>
-              )}
-
-              {error && (
-                <div className="mt-4">
-                  <Status appearance="red">{error}</Status>
-                </div>
-              )}
-
-              {report && (
-                <div className="mt-12">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-semibold text-gray-900">Your Standup Report</h2>
-                    <div className="flex items-center gap-8">
-                      <Button
-                        variant="ghost"
-                        size="md"
-                        onPress={() => setReport(null)}
-                        data-referenceid="clear-report"
-                      >
-                        Clear Results
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="md"
-                        onPress={copyReport}
-                        iconLeading={({ className }: { className?: string }) => (
-                          <Icon 
-                            name={copied ? 'check' : 'copy'} 
-                            className={className}
-                            aria-label={copied ? 'Copied' : 'Copy'}
-                          />
-                        )}
-                        data-referenceid="copy-report"
-                        aria-label={copied ? 'Copied' : 'Copy report'}
-                      />
-                    </div>
-                  </div>
-                  <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] mt-[1rem] report-content">
-                    <ReactMarkdown>{report}</ReactMarkdown>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Past Reports Tab */}
-          {activeTab === 'past-reports' && (
-            <div data-referenceid="past-reports-tab">
-              {loadingPastReports ? (
-                <div className="flex items-center justify-center py-12 gap-[0.5rem] text-gray-600">
-                  <div className="w-[16px] h-[16px] border-2 border-gray-200 border-t-brand-600 rounded-full animate-spin"></div>
-                  Loading reports...
-                </div>
-              ) : pastReports.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No past reports yet.</p>
-                  <p className="text-sm mt-2">Generate a report to see it here.</p>
-                </div>
-              ) : (
-                <div className="flex gap-12">
-                  {/* Report List */}
-                  <div className="w-1/3 border-r border-gray-200 pr-8">
-                    <div className="space-y-8">
-                      {pastReports.map((pastReport) => (
-                        <div
-                          key={pastReport.id}
-                          className={`py-6 px-8 rounded-[8px] cursor-pointer transition-colors ${
-                            selectedPastReport?.id === pastReport.id
-                              ? 'bg-brand-50 border border-brand-200'
-                              : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
-                          }`}
-                          onClick={() => setSelectedPastReport(pastReport)}
-                          data-referenceid="past-report-item"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {pastReport.project_key}
-                                {pastReport.board_name && (
-                                  <span className="text-gray-500"> / {pastReport.board_name}</span>
-                                )}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {new Date(pastReport.created_at).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric',
-                                  hour: 'numeric',
-                                  minute: '2-digit',
-                                })}
-                              </p>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deletePastReport(pastReport.id);
-                              }}
-                              className="text-gray-400 hover:text-red-500 p-1"
-                              data-referenceid="delete-report"
-                            >
-                              <Icon name="trash" className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Report Preview */}
-                  <div className="flex-1">
-                    {selectedPastReport ? (
-                      <div>
-                        <div className="flex items-center justify-between mb-12">
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {selectedPastReport.project_key}
-                              {selectedPastReport.board_name && (
-                                <span className="text-gray-500"> / {selectedPastReport.board_name}</span>
-                              )}
-                            </h3>
-                            <p className="text-sm text-gray-500 mt-1">
-                              {new Date(selectedPastReport.created_at).toLocaleDateString('en-US', {
-                                weekday: 'long',
-                                month: 'long',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
-                              <span className="text-gray-400 ml-6">
-                                {new Date(selectedPastReport.created_at).toLocaleTimeString('en-US', {
-                                  hour: 'numeric',
-                                  minute: '2-digit',
-                                })}
-                              </span>
-                            </p>
-                          </div>
-                          <Button
-                            variant="primary"
-                            size="md"
-                            onPress={() => {
-                              setReport(selectedPastReport.report);
-                              copyReport();
-                            }}
-                            iconLeading={({ className }: { className?: string }) => (
-                              <Icon 
-                                name={copied ? 'check' : 'copy'} 
-                                className={className}
-                                aria-label={copied ? 'Copied' : 'Copy'}
-                              />
-                            )}
-                            data-referenceid="copy-past-report"
-                            aria-label={copied ? 'Copied' : 'Copy report'}
-                          />
-                        </div>
-                        <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] report-content">
-                          <ReactMarkdown>{selectedPastReport.report}</ReactMarkdown>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 text-gray-500">
-                        <p>Select a report to preview</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Formatting Tab */}
-          {activeTab === 'formatting' && (
-            <div data-referenceid="formatting-tab">
-              <div className="mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Report Formatting Instructions</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  Customize the instructions given to Claude when generating your standup report.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem]">
-                  <textarea
-                    value={formattingInstructions}
-                    onChange={(e) => {
-                      setFormattingInstructions(e.target.value);
-                      setFormattingEdited(true);
-                    }}
-                    className="w-full h-[400px] bg-transparent text-sm text-gray-700 font-mono whitespace-pre-wrap resize-none focus:outline-none"
-                    data-referenceid="formatting-textarea"
-                  />
-                </div>
-                <div className="flex gap-3 justify-end">
-                  {hasCustomFormatting && (
-                    <Button
-                      variant="outline"
-                      onPress={resetFormatting}
-                      isDisabled={savingFormatting}
-                      data-referenceid="reset-formatting"
-                    >
-                      Reset to Default
-                    </Button>
-                  )}
-                  {formattingEdited && (
-                    <Button
-                      variant="primary"
-                      onPress={saveFormatting}
-                      isDisabled={savingFormatting}
-                      data-referenceid="save-formatting"
-                    >
-                      {savingFormatting ? 'Saving...' : 'Save'}
-                    </Button>
-                  )}
-                </div>
-                {formattingEdited && (
-                  <div className="text-sm text-amber-600">
-                    You have unsaved changes. Click Save to apply them to future reports.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+      <div className="bg-white rounded-[8px] shadow-[0_1px_3px_rgba(0,0,0,0.1)] mb-[1.5rem]" data-referenceid="tab-navigation">
+        <Tabs
+          appearance="underline"
+          items={tabItems}
+          defaultSelectedKey="new-report"
+          className="rounded-[8px]"
+        />
       </div>
     </div>
   );

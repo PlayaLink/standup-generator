@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@oxymormon/chg-unified-ds": "^0.2.14",
+    "@oxymormon/chg-unified-ds": "^0.2.15",
     "@standup/core": "*",
     "next": "^14.0.0",
     "react": "^18.0.0",
