@@ -541,7 +541,7 @@ Additional formatting:
               }`}
               data-referenceid={`tab-${tab.id}`}
             >
-              <Icon name={tab.icon} size={16} />
+              <Icon name={tab.icon} className="size-sm" />
               {tab.label}
             </button>
           ))}
