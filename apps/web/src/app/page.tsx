@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Field, Status } from '@oxymormon/chg-unified-ds';
-import { TextInput } from '@/components/TextInput';
+import { Button, Status } from '@oxymormon/chg-unified-ds';
 
 export default function Home() {
-  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
@@ -16,51 +14,47 @@ export default function Home() {
     // Check URL params on client side
     const urlParams = new URLSearchParams(window.location.search);
     const justLoggedOut = urlParams.get('logout') === 'true';
-    
+    const errorParam = urlParams.get('error');
+
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+      // Clear the error param from URL
+      window.history.replaceState({}, '', '/');
+      return;
+    }
+
     if (justLoggedOut) {
       // Clear the logout param from URL
       window.history.replaceState({}, '', '/');
       return;
     }
-    
+
     const userEmail = localStorage.getItem('userEmail');
     if (userEmail) {
       router.push('/dashboard');
     }
   }, [router]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
+      // Get the OAuth URL from the API
+      const response = await fetch('/api/auth/login');
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+        throw new Error(data.error || 'Failed to initiate login');
       }
 
-      // Store user info
-      localStorage.setItem('userEmail', email);
-      localStorage.setItem('userId', data.userId);
+      // Store the state in sessionStorage for CSRF verification (optional client-side check)
+      sessionStorage.setItem('jira_oauth_state', data.state);
 
-      // Check if Jira is connected
-      if (data.jiraConnected) {
-        router.push('/dashboard');
-      } else {
-        // Redirect to Jira OAuth
-        window.location.href = data.jiraAuthUrl;
-      }
+      // Redirect to Jira OAuth
+      window.location.href = data.jiraAuthUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
       setLoading(false);
     }
   };
@@ -73,32 +67,20 @@ export default function Home() {
           Generate weekly standup reports from your Jira tickets
         </p>
 
-        <form onSubmit={handleLogin}>
-          <Field label="Email Address">
-            <TextInput
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              required
-            />
-          </Field>
+        {error && (
+          <div className="mt-4">
+            <Status appearance="red">{error}</Status>
+          </div>
+        )}
 
-          {error && (
-            <div className="mt-4">
-              <Status appearance="red">{error}</Status>
-            </div>
-          )}
-
-          <Button
-            type="submit"
-            variant="primary"
-            className="w-full mt-6"
-            isDisabled={loading}
-          >
-            {loading ? 'Signing in...' : 'Continue with Jira'}
-          </Button>
-        </form>
+        <Button
+          variant="primary"
+          className="w-full mt-6"
+          isDisabled={loading}
+          onPress={handleLogin}
+        >
+          {loading ? 'Signing in...' : 'Login with Jira'}
+        </Button>
       </div>
     </div>
   );

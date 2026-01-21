@@ -14,14 +14,14 @@ const DEFAULT_SYSTEM_PROMPT = `You are a helpful assistant that generates weekly
 Format requirements:
 - Start directly with "## Last Week" (no title header)
 - Ticket format: [PROJ-123](https://jira.example.com/browse/PROJ-123) - Concise Name
-- Each ticket gets 1-3 bullet points describing work done or planned
+- Each ticket gets 1-3 bullet points describing work done or planned. If the ticket has no comments or status changes, do not include any bullet points. Do not include more than 3 bullet points per ticket. Most should have 1-2 bullet points.
 - Organize into three sections:
 
 ## Last Week
 Include all "In Progress" or "In Review" tickets that have with new comments or status changes made in the past 7 days. Summarize the conversation in the comments for each ticket.
 
 ## This Week
-Include all "In Progress" and "To Do" tickets assigned to me (even if they were included in the Last Week section). Review the ticket descriptions and include 1-3 bullet points based on the next actions stated in the ticket, outstanding items from comment discussions, and logical next steps to move the ticket forward. Include due dates when applicable. Put the due date in parentheses after the ticket name.
+Include all "In Progress" and "To Do" tickets assigned to me (even if they were included in the Last Week section). Review the ticket descriptions and include 1-3 bullet points based on the next actions or outstanding items from comment discussions, and logical next steps to move the ticket forward. Include due dates when applicable. Put the due date in parentheses after the ticket name.
 
 ## Blockers
 Dependencies or items you're waiting on. If none, just say "None"
@@ -90,6 +90,19 @@ export default function Dashboard() {
   const router = useRouter();
 
   useEffect(() => {
+    // Check URL params for userId and email from OAuth callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlUserId = urlParams.get('userId');
+    const urlEmail = urlParams.get('email');
+
+    // If we have userId and email from callback, store them and clean URL
+    if (urlUserId && urlEmail) {
+      localStorage.setItem('userId', urlUserId);
+      localStorage.setItem('userEmail', urlEmail);
+      // Clean up URL params
+      window.history.replaceState({}, '', '/dashboard');
+    }
+
     const email = localStorage.getItem('userEmail');
     const id = localStorage.getItem('userId');
 
@@ -104,7 +117,7 @@ export default function Dashboard() {
     // Fetch projects and user profile
     fetchProjects(id);
     fetchUserProfile(id);
-    
+
     // Load past reports and formatting from API
     fetchPastReports(id);
     fetchFormatting(id);
@@ -343,14 +356,74 @@ export default function Dashboard() {
         console.log('\n============================');
       }
 
-      // Log raw data for MC-26002
+      // Log ticket names and comments grouped by last week vs this week
       if (data.rawTickets) {
-        const mc26002 = data.rawTickets.find((t: { key: string }) => t.key === 'MC-26002');
-        if (mc26002) {
-          console.log('\n=== Raw Data for MC-26002 ===');
-          console.log(JSON.stringify(mc26002, null, 2));
-          console.log('=============================\n');
+        type RawTicket = {
+          key: string;
+          summary: string;
+          updated: string;
+          comments?: Array<{ body: string; created: string; author: string }>;
+        };
+        const rawTickets = data.rawTickets as RawTicket[];
+
+        // Calculate week boundaries
+        const now = new Date();
+        const startOfThisWeek = new Date(now);
+        startOfThisWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+        startOfThisWeek.setHours(0, 0, 0, 0);
+
+        const startOfLastWeek = new Date(startOfThisWeek);
+        startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+
+        const thisWeekTickets: RawTicket[] = [];
+        const lastWeekTickets: RawTicket[] = [];
+
+        rawTickets.forEach((ticket) => {
+          const updatedDate = new Date(ticket.updated);
+          if (updatedDate >= startOfThisWeek) {
+            thisWeekTickets.push(ticket);
+          } else if (updatedDate >= startOfLastWeek) {
+            lastWeekTickets.push(ticket);
+          }
+        });
+
+        console.log('\n=== TICKETS WITH COMMENTS ===');
+
+        console.log('\n📅 THIS WEEK:');
+        if (thisWeekTickets.length === 0) {
+          console.log('  No tickets updated this week');
+        } else {
+          thisWeekTickets.forEach((ticket) => {
+            console.log(`\n  [${ticket.key}] ${ticket.summary}`);
+            if (ticket.comments && ticket.comments.length > 0) {
+              ticket.comments.forEach((comment) => {
+                console.log(`    💬 ${comment.author} (${new Date(comment.created).toLocaleDateString()}):`);
+                console.log(`       ${comment.body}`);
+              });
+            } else {
+              console.log('    (no comments)');
+            }
+          });
         }
+
+        console.log('\n📅 LAST WEEK:');
+        if (lastWeekTickets.length === 0) {
+          console.log('  No tickets updated last week');
+        } else {
+          lastWeekTickets.forEach((ticket) => {
+            console.log(`\n  [${ticket.key}] ${ticket.summary}`);
+            if (ticket.comments && ticket.comments.length > 0) {
+              ticket.comments.forEach((comment) => {
+                console.log(`    💬 ${comment.author} (${new Date(comment.created).toLocaleDateString()}):`);
+                console.log(`       ${comment.body}`);
+              });
+            } else {
+              console.log('    (no comments)');
+            }
+          });
+        }
+
+        console.log('\n=============================\n');
       }
 
       setReport(data.report);
