@@ -29,6 +29,7 @@ interface PastReport {
 }
 
 const daysOptions = [
+  { id: '1', name: 'Last 24 hours' },
   { id: '7', name: 'Last 7 days' },
   { id: '14', name: 'Last 14 days' },
   { id: '30', name: 'Last 30 days' },
@@ -568,7 +569,7 @@ export default function Dashboard() {
                 </Field>
               )}
 
-              <Field label="Days to look back">
+              <Field label="Include tickets from">
                 <Select
                   options={daysOptions}
                   selectedKey={daysBack}
