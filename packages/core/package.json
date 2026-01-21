@@ -30,6 +30,11 @@
       "import": "./dist/encryption.mjs",
       "require": "./dist/encryption.js",
       "types": "./dist/encryption.d.ts"
+    },
+    "./prompts": {
+      "import": "./dist/prompts/index.mjs",
+      "require": "./dist/prompts/index.js",
+      "types": "./dist/prompts/index.d.ts"
     }
   },
   "scripts": {
