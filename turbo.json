@@ -1,5 +1,14 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "JIRA_CLIENT_ID",
+    "JIRA_CLIENT_SECRET",
+    "JIRA_REDIRECT_URI",
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_KEY",
+    "ANTHROPIC_API_KEY",
+    "TOKEN_ENCRYPTION_KEY"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
