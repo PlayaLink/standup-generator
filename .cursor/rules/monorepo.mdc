@@ -79,3 +79,26 @@ import { fetchTickets } from '@standup/core/jira';
 Turborepo handles build order automatically:
 1. `packages/core` builds first (no deps)
 2. `apps/slack` and `apps/teams` build after core
+
+## Environment Variables with Transpiled Packages
+
+When using `transpilePackages` in Next.js to include `@standup/core`, environment variables accessed via `process.env` in the core package will be `undefined` at runtime unless explicitly passed through in `next.config.mjs`.
+
+**Required pattern for Next.js apps:**
+
+```javascript
+// apps/web/next.config.mjs
+const nextConfig = {
+  transpilePackages: ['@standup/core'],
+  // Pass env vars needed by @standup/core
+  env: {
+    JIRA_CLIENT_ID: process.env.JIRA_CLIENT_ID,
+    JIRA_CLIENT_SECRET: process.env.JIRA_CLIENT_SECRET,
+    JIRA_REDIRECT_URI: process.env.JIRA_REDIRECT_URI,
+  },
+};
+```
+
+**Why this happens:** When a package is transpiled, the bundler processes it separately and doesn't automatically inherit the runtime environment. The `env` config inlines these values at build time.
+
+**Debugging tip:** If API routes return `undefined` for env vars, check that they're listed in `next.config.mjs`.
