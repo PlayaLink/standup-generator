@@ -481,32 +481,43 @@ export default function Dashboard() {
       .replace(/\n/g, '<br>');
   };
 
-  const copyReport = async () => {
-    if (report) {
-      const html = formatReportAsHtml(report);
-      const plainText = report
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Strip URLs, keep text
-        .replace(/^## /gm, '')
-        .replace(/^### /gm, '')
-        .replace(/^- /gm, '• ');
+  const copyReport = async (text?: string) => {
+    const content = text ?? report;
+    if (!content) return;
 
+    const html = formatReportAsHtml(content);
+    const plainText = content
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Strip URLs, keep text
+      .replace(/^## /gm, '')
+      .replace(/^### /gm, '')
+      .replace(/^- /gm, '• ');
+
+    try {
+      // Copy as rich text (HTML) so hyperlinks are preserved
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([plainText], { type: 'text/plain' }),
+        }),
+      ]);
+    } catch {
       try {
-        // Copy as rich text (HTML) so hyperlinks are preserved
-        await navigator.clipboard.write([
-          new ClipboardItem({
-            'text/html': new Blob([html], { type: 'text/html' }),
-            'text/plain': new Blob([plainText], { type: 'text/plain' }),
-          }),
-        ]);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        // Fallback to plain text via clipboard API
+        await navigator.clipboard.writeText(plainText);
       } catch {
-        // Fallback to plain text if rich text copy fails
-        navigator.clipboard.writeText(plainText);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        // Final fallback using execCommand for environments where clipboard API is blocked
+        const textarea = document.createElement('textarea');
+        textarea.value = plainText;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
       }
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (!userEmail) {
@@ -611,7 +622,7 @@ export default function Dashboard() {
                 <Button
                   variant="primary"
                   size="sm"
-                  onPress={copyReport}
+                  onPress={() => copyReport()}
                   style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}
                   aria-label={copied ? 'Copied' : 'Copy report'}
                   data-referenceid="copy-report"
@@ -724,10 +735,7 @@ export default function Dashboard() {
                       <Button
                         variant="primary"
                         size="sm"
-                        onPress={() => {
-                          setReport(selectedPastReport.report);
-                          copyReport();
-                        }}
+                        onPress={() => copyReport(selectedPastReport.report)}
                         style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}
                         aria-label={copied ? 'Copied' : 'Copy report'}
                         data-referenceid="copy-past-report"
