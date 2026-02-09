@@ -615,7 +615,9 @@ export default function Dashboard() {
                   style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}
                   aria-label={copied ? 'Copied' : 'Copy report'}
                   data-referenceid="copy-report"
-                  iconLeading={<Icon name={copied ? 'check' : 'copy'} className="size-sm" />}
+                  iconLeading={({ className }: { className?: string }) => (
+                    <Icon name={copied ? 'check' : 'copy'} className={className} />
+                  )}
                 />
                 <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] report-content">
                   <ReactMarkdown>{report}</ReactMarkdown>
@@ -729,7 +731,9 @@ export default function Dashboard() {
                         style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}
                         aria-label={copied ? 'Copied' : 'Copy report'}
                         data-referenceid="copy-past-report"
-                        iconLeading={<Icon name={copied ? 'check' : 'copy'} className="size-sm" />}
+                        iconLeading={({ className }: { className?: string }) => (
+                          <Icon name={copied ? 'check' : 'copy'} className={className} />
+                        )}
                       />
                       <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-[1.5rem] py-[1.5rem] report-content">
                         <ReactMarkdown>{selectedPastReport.report}</ReactMarkdown>
@@ -866,7 +870,9 @@ export default function Dashboard() {
                   variant="ghost"
                   onPress={handleLogout}
                   className="w-full justify-start"
-                  iconLeading={<Icon name="sign-out" className="size-sm" />}
+                  iconLeading={({ className }: { className?: string }) => (
+                    <Icon name="sign-out" className={className} />
+                  )}
                   data-referenceid="logout-button"
                 >
                   Logout
