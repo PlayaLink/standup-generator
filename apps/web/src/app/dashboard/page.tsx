@@ -482,8 +482,13 @@ export default function Dashboard() {
   };
 
   const copyReport = async (text?: string) => {
+    console.log('[copy] copyReport called, has text param:', !!text);
     const content = text ?? report;
-    if (!content) return;
+    if (!content) {
+      console.log('[copy] No content, returning early');
+      return;
+    }
+    console.log('[copy] Content length:', content.length);
 
     const html = formatReportAsHtml(content);
     const plainText = content
