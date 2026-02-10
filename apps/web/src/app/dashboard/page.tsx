@@ -481,41 +481,27 @@ export default function Dashboard() {
       .replace(/\n/g, '<br>');
   };
 
-  const copyReport = async (text?: string) => {
+  const copyReport = (text?: string) => {
     const content = text ?? report;
     if (!content) return;
 
     const html = formatReportAsHtml(content);
-    const plainText = content
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Strip URLs, keep text
-      .replace(/^## /gm, '')
-      .replace(/^### /gm, '')
-      .replace(/^- /gm, '• ');
 
-    try {
-      // Copy as rich text (HTML) so hyperlinks are preserved
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          'text/html': new Blob([html], { type: 'text/html' }),
-          'text/plain': new Blob([plainText], { type: 'text/plain' }),
-        }),
-      ]);
-    } catch {
-      try {
-        // Fallback to plain text via clipboard API
-        await navigator.clipboard.writeText(plainText);
-      } catch {
-        // Final fallback using execCommand for environments where clipboard API is blocked
-        const textarea = document.createElement('textarea');
-        textarea.value = plainText;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
-    }
+    // Use execCommand with a hidden div to copy rich text (preserves hyperlinks).
+    // The Clipboard API silently fails on some deployed environments even on HTTPS.
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    div.style.position = 'fixed';
+    div.style.opacity = '0';
+    document.body.appendChild(div);
+    const range = document.createRange();
+    range.selectNodeContents(div);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    document.execCommand('copy');
+    selection?.removeAllRanges();
+    document.body.removeChild(div);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
