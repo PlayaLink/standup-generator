@@ -8,8 +8,8 @@ import { Avatar, Button, Field, Status, Icon, Tabs } from '@oxymormon/chg-unifie
 import { Select, type Key } from '@/components/Select';
 import { DEFAULT_SYSTEM_PROMPT } from '@standup/core/prompts';
 
-// Debug: proves whether this bundle version is loaded in the browser
-console.log('[dashboard] Module loaded — build v3');
+// Debug: using console.warn so it shows in filtered console
+console.warn('[dashboard] Module loaded — build v4');
 
 interface Project {
   id: string;
@@ -485,13 +485,13 @@ export default function Dashboard() {
   };
 
   const copyReport = async (text?: string) => {
-    console.log('[copy] copyReport called, has text param:', !!text);
+    console.warn('[copy] copyReport called, has text param:', !!text);
     const content = text ?? report;
     if (!content) {
-      console.log('[copy] No content, returning early');
+      console.warn('[copy] No content, returning early');
       return;
     }
-    console.log('[copy] Content length:', content.length);
+    console.warn('[copy] Content length:', content.length);
 
     const html = formatReportAsHtml(content);
     const plainText = content
@@ -512,7 +512,7 @@ export default function Dashboard() {
           }),
         ]);
         success = true;
-        console.log('[copy] Clipboard API write succeeded');
+        console.warn('[copy] Clipboard API write succeeded');
       } catch (err) {
         console.warn('[copy] Clipboard API write failed:', err);
       }
@@ -523,7 +523,7 @@ export default function Dashboard() {
       try {
         await navigator.clipboard.writeText(plainText);
         success = true;
-        console.log('[copy] Clipboard API writeText succeeded');
+        console.warn('[copy] Clipboard API writeText succeeded');
       } catch (err) {
         console.warn('[copy] Clipboard API writeText failed:', err);
       }
@@ -543,7 +543,7 @@ export default function Dashboard() {
       selection?.removeAllRanges();
       selection?.addRange(range);
       success = document.execCommand('copy');
-      console.log('[copy] execCommand result:', success);
+      console.warn('[copy] execCommand result:', success);
       selection?.removeAllRanges();
       document.body.removeChild(div);
     }
@@ -558,7 +558,7 @@ export default function Dashboard() {
       document.body.appendChild(textarea);
       textarea.select();
       success = document.execCommand('copy');
-      console.log('[copy] execCommand textarea result:', success);
+      console.warn('[copy] execCommand textarea result:', success);
       document.body.removeChild(textarea);
     }
 
