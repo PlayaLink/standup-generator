@@ -8,11 +8,6 @@ import { Avatar, Button, Field, Status, Icon, Tabs } from '@oxymormon/chg-unifie
 import { Select, type Key } from '@/components/Select';
 import { DEFAULT_SYSTEM_PROMPT } from '@standup/core/prompts';
 
-// Debug: bypass console entirely — visible in browser tab title
-if (typeof document !== 'undefined') {
-  document.title = '[DEBUG v5] ' + document.title;
-}
-
 interface Project {
   id: string;
   name: string;
@@ -487,13 +482,8 @@ export default function Dashboard() {
   };
 
   const copyReport = async (text?: string) => {
-    console.warn('[copy] copyReport called, has text param:', !!text);
     const content = text ?? report;
-    if (!content) {
-      console.warn('[copy] No content, returning early');
-      return;
-    }
-    console.warn('[copy] Content length:', content.length);
+    if (!content) return;
 
     const html = formatReportAsHtml(content);
     const plainText = content
@@ -504,8 +494,43 @@ export default function Dashboard() {
 
     let success = false;
 
-    // Attempt 1: Clipboard API with rich text
-    if (navigator.clipboard?.write) {
+    // Attempt 1: execCommand with off-screen div (rich text with hyperlinks)
+    // Preferred because it's synchronous, reliable, and its return value is trustworthy.
+    // The Clipboard API resolves successfully in production but writes nothing.
+    if (!success) {
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      div.style.position = 'fixed';
+      div.style.left = '-9999px';
+      div.style.top = '-9999px';
+      document.body.appendChild(div);
+      const range = document.createRange();
+      range.selectNodeContents(div);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      success = document.execCommand('copy');
+      console.warn('[copy] execCommand div result:', success);
+      selection?.removeAllRanges();
+      document.body.removeChild(div);
+    }
+
+    // Attempt 2: execCommand with textarea (plain text fallback)
+    if (!success) {
+      const textarea = document.createElement('textarea');
+      textarea.value = plainText;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      success = document.execCommand('copy');
+      console.warn('[copy] execCommand textarea result:', success);
+      document.body.removeChild(textarea);
+    }
+
+    // Attempt 3: Clipboard API with rich text (last resort)
+    if (!success && navigator.clipboard?.write) {
       try {
         await navigator.clipboard.write([
           new ClipboardItem({
@@ -520,7 +545,7 @@ export default function Dashboard() {
       }
     }
 
-    // Attempt 2: Clipboard API plain text
+    // Attempt 4: Clipboard API plain text (last resort)
     if (!success && navigator.clipboard?.writeText) {
       try {
         await navigator.clipboard.writeText(plainText);
@@ -529,39 +554,6 @@ export default function Dashboard() {
       } catch (err) {
         console.warn('[copy] Clipboard API writeText failed:', err);
       }
-    }
-
-    // Attempt 3: execCommand with off-screen div (rich text)
-    if (!success) {
-      const div = document.createElement('div');
-      div.innerHTML = html;
-      div.style.position = 'fixed';
-      div.style.left = '-9999px';
-      div.style.top = '-9999px';
-      document.body.appendChild(div);
-      const range = document.createRange();
-      range.selectNodeContents(div);
-      const selection = window.getSelection();
-      selection?.removeAllRanges();
-      selection?.addRange(range);
-      success = document.execCommand('copy');
-      console.warn('[copy] execCommand result:', success);
-      selection?.removeAllRanges();
-      document.body.removeChild(div);
-    }
-
-    // Attempt 4: execCommand with textarea (plain text, most basic)
-    if (!success) {
-      const textarea = document.createElement('textarea');
-      textarea.value = plainText;
-      textarea.style.position = 'fixed';
-      textarea.style.left = '-9999px';
-      textarea.style.top = '-9999px';
-      document.body.appendChild(textarea);
-      textarea.select();
-      success = document.execCommand('copy');
-      console.warn('[copy] execCommand textarea result:', success);
-      document.body.removeChild(textarea);
     }
 
     if (!success) {
