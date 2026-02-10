@@ -8,6 +8,9 @@ import { Avatar, Button, Field, Status, Icon, Tabs } from '@oxymormon/chg-unifie
 import { Select, type Key } from '@/components/Select';
 import { DEFAULT_SYSTEM_PROMPT } from '@standup/core/prompts';
 
+// Debug: proves whether this bundle version is loaded in the browser
+console.log('[dashboard] Module loaded — build v3');
+
 interface Project {
   id: string;
   name: string;
