@@ -481,29 +481,87 @@ export default function Dashboard() {
       .replace(/\n/g, '<br>');
   };
 
-  const copyReport = (text?: string) => {
+  const copyReport = async (text?: string) => {
     const content = text ?? report;
     if (!content) return;
 
     const html = formatReportAsHtml(content);
+    const plainText = content
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/^## /gm, '')
+      .replace(/^### /gm, '')
+      .replace(/^- /gm, '• ');
 
-    // Use execCommand with a hidden div to copy rich text (preserves hyperlinks).
-    // The Clipboard API silently fails on some deployed environments even on HTTPS.
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    div.style.position = 'fixed';
-    div.style.opacity = '0';
-    document.body.appendChild(div);
-    const range = document.createRange();
-    range.selectNodeContents(div);
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-    document.execCommand('copy');
-    selection?.removeAllRanges();
-    document.body.removeChild(div);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    let success = false;
+
+    // Attempt 1: Clipboard API with rich text
+    if (navigator.clipboard?.write) {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([plainText], { type: 'text/plain' }),
+          }),
+        ]);
+        success = true;
+        console.log('[copy] Clipboard API write succeeded');
+      } catch (err) {
+        console.warn('[copy] Clipboard API write failed:', err);
+      }
+    }
+
+    // Attempt 2: Clipboard API plain text
+    if (!success && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(plainText);
+        success = true;
+        console.log('[copy] Clipboard API writeText succeeded');
+      } catch (err) {
+        console.warn('[copy] Clipboard API writeText failed:', err);
+      }
+    }
+
+    // Attempt 3: execCommand with off-screen div (rich text)
+    if (!success) {
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      div.style.position = 'fixed';
+      div.style.left = '-9999px';
+      div.style.top = '-9999px';
+      document.body.appendChild(div);
+      const range = document.createRange();
+      range.selectNodeContents(div);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      success = document.execCommand('copy');
+      console.log('[copy] execCommand result:', success);
+      selection?.removeAllRanges();
+      document.body.removeChild(div);
+    }
+
+    // Attempt 4: execCommand with textarea (plain text, most basic)
+    if (!success) {
+      const textarea = document.createElement('textarea');
+      textarea.value = plainText;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      success = document.execCommand('copy');
+      console.log('[copy] execCommand textarea result:', success);
+      document.body.removeChild(textarea);
+    }
+
+    if (!success) {
+      console.error('[copy] All clipboard methods failed');
+    }
+
+    setCopied(success);
+    if (success) {
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   if (!userEmail) {
