@@ -8,8 +8,10 @@ import { Avatar, Button, Field, Status, Icon, Tabs } from '@oxymormon/chg-unifie
 import { Select, type Key } from '@/components/Select';
 import { DEFAULT_SYSTEM_PROMPT } from '@standup/core/prompts';
 
-// Debug: using console.warn so it shows in filtered console
-console.warn('[dashboard] Module loaded — build v4');
+// Debug: bypass console entirely — visible in browser tab title
+if (typeof document !== 'undefined') {
+  document.title = '[DEBUG v5] ' + document.title;
+}
 
 interface Project {
   id: string;
