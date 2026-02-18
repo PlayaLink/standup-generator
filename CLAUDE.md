@@ -1,15 +1,28 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides project runtime context for `standup-generator`.
 
-## Important: Do Not Modify This File
+## Project Overview
 
-**Do NOT duplicate the cursor rules into this file.** The `.cursor/rules/` directory is the single source of truth for all project guidance. This file should only point to those rules, not replicate them.
+`standup-generator` is an npm workspaces monorepo orchestrated with Turborepo.
 
-**When running `/init`:** Do not "improve" this file by consolidating or summarizing the cursor rules here. The current structure is intentional. If `/init` suggests creating a comprehensive CLAUDE.md with commands, architecture, etc., decline - that information already exists in `.cursor/rules/` and should not be duplicated. If you have suggestions on how to improve our documentation and rules, suggest those edits in `.cursor/rules/` directly, rather than suggest making changes to CLAUDE.md.
+## Commands
 
-## Instructions
+```bash
+npm run dev    # turbo dev across workspaces
+npm run build  # turbo build
+npm run lint   # turbo lint
+npm run clean  # turbo clean and remove root node_modules
+```
 
-Read all files in `.cursor/rules/` directory for project-specific guidance. These rules are the authoritative source for development patterns, commands, and conventions.
+## Workspace Layout
 
-When updating project rules, edit the appropriate file in `.cursor/rules/` rather than this file.
+- `apps/` app-level packages
+- `packages/` shared libraries
+- `scripts/` utility scripts
+- `supabase/` local backend/database artifacts
+
+## Instruction Sources
+
+- Agent behavior/process rules are inherited from `/Users/jengland/claude/chg/AGENTS.md`.
+- Keep this file focused on runtime context and workspace layout.
