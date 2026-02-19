@@ -1,6 +1,5 @@
 ---
 description: Security patterns, environment variables, and encryption
-alwaysApply: true
 ---
 
 # Security

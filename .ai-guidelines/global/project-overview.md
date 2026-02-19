@@ -1,0 +1,37 @@
+---
+---
+
+# Standup Generator
+
+AI-powered standup report generator for Slack and Teams, pulling data from Jira.
+
+## Structure
+
+```
+apps/web/       # Web app (Next.js) - port 3003
+apps/slack/     # Slack bot (Next.js + Bolt) - port 3001
+apps/teams/     # Teams bot (Next.js + Bot Framework) - port 3002
+packages/core/  # Shared library (@standup/core)
+```
+
+## Tech Stack
+
+- **Database**: Hosted Supabase (cloud, not local Docker)
+- **Auth**: Jira OAuth 2.0 (3LO) with classic scopes
+- **AI**: Anthropic Claude
+
+## Commands
+
+```bash
+npm run dev     # Start all apps (Web:3003, Slack:3001, Teams:3002)
+npm run build   # Build all packages
+npm run lint    # Lint all packages
+```
+
+## For More Context
+
+- `@architecture` - Full tech stack and patterns
+- `@monorepo` - Turborepo workspace details
+- `@database` - Supabase schema
+- `@jira` - Jira integration details
+- `@security` - Environment variables and encryption

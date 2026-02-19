@@ -1,6 +1,5 @@
 ---
 description: Semantic markup and DOM reference requirements. Always include data-referenceid attributes for easy DOM inspection and code searchability.
-alwaysApply: true
 ---
 
 # Semantic Markup Requirements

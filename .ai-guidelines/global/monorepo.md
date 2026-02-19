@@ -1,6 +1,5 @@
 ---
 description: Turborepo workspace structure and commands
-alwaysApply: true
 ---
 
 # Monorepo Guide

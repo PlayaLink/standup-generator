@@ -1,6 +1,5 @@
 ---
 description: Supabase database schema and query patterns
-alwaysApply: true
 ---
 
 # Database (Supabase)

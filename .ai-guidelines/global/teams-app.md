@@ -1,7 +1,6 @@
 ---
 description: Teams bot development patterns using Bot Framework
 globs: apps/teams/**
-alwaysApply: true
 ---
 
 # Teams App

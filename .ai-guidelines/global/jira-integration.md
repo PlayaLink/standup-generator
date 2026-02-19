@@ -1,6 +1,5 @@
 ---
 description: Jira OAuth flow and API integration patterns
-alwaysApply: true
 ---
 
 # Jira Integration

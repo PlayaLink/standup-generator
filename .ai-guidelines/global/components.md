@@ -1,7 +1,3 @@
----
-alwaysApply: true
----
-
 # Component Usage Rules
 
 ## Priority 1: CHG Unified Design System

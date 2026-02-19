@@ -1,7 +1,6 @@
 ---
 description: Patterns for working with @standup/core shared library
 globs: packages/core/**
-alwaysApply: true
 ---
 
 # Core Package (@standup/core)

@@ -1,7 +1,6 @@
 ---
 description: Slack bot development patterns using Bolt framework
 globs: apps/slack/**
-alwaysApply: true
 ---
 
 # Slack App

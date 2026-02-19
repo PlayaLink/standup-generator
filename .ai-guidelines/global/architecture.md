@@ -1,6 +1,5 @@
 ---
 description: Detailed architecture, tech stack, and patterns for the standup generator
-alwaysApply: true
 ---
 
 # Architecture

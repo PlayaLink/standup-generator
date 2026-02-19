@@ -1,0 +1,64 @@
+---
+---
+
+# Icon Usage
+
+Always use `Icon` from `@oxymormon/chg-unified-ds`. Never use inline SVGs.
+
+## Import
+
+```typescript
+import { Icon, createIcon } from '@oxymormon/chg-unified-ds';
+```
+
+## Usage
+
+```tsx
+// Standalone
+<Icon name="copy" size={24} />
+<Icon name="check" className="text-red-500" />
+
+// In Button (conditional)
+<Button 
+  iconLeading={({ className }) => (
+    <Icon name={copied ? 'check' : 'copy'} className={className} />
+  )}
+>
+  Copy
+</Button>
+
+// Icon-only Button (no children)
+<Button 
+  iconLeading={({ className }) => <Icon name="copy" className={className} />}
+  aria-label="Copy to clipboard"
+/>
+
+// Delete button
+<button onClick={handleDelete}>
+  <Icon name="trash" className="w-4 h-4 text-gray-400 hover:text-red-500" />
+</button>
+```
+
+## Available Icons
+
+`copy`, `check`, `chevron-down`, `caret-down`, `sign-out`, `trash`, `plus`, `clock-counter-clockwise`, `sliders`, `pencil`, `arrow-counter-clockwise`
+
+## Adding New Icons
+
+1. Find icon at [phosphoricons.com](https://phosphoricons.com)
+2. Add to `chg-unified-ds/src/components/Icon/Icon.tsx`:
+   ```typescript
+   import { ArrowRight } from '@phosphor-icons/react';
+   const icons = {
+     // ... existing
+     'arrow-right': ArrowRight, // PascalCase → kebab-case
+   } as const;
+   ```
+3. Rebuild: `npm run build:lib` in chg-unified-ds
+4. Use: `<Icon name="arrow-right" />`
+
+## Notes
+
+- Icons inherit color via `currentColor` (use Tailwind `text-*` classes)
+- Size handled automatically in Button/Chip via className
+- TypeScript autocompletes icon names
