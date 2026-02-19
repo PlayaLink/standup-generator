@@ -1,0 +1,12 @@
+name: AI Guidelines Drift Check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  drift-check:
+    uses: PlayaLink/ai-guidelines/.github/workflows/ai-guidelines-drift-check.yml@v0.1.0
+    with:
+      ai_guidelines_ref: v0.1.0
+    secrets: inherit
